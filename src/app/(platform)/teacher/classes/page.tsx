@@ -1,115 +1,131 @@
 // src/app/(platform)/teacher/classes/page.tsx
-'use client';
+"use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation'; // useRouter might be needed for navigation
 import { useAuthStore } from '@/store/authStore';
-import { getClassesForTeacher } from '@/services/firestoreService';
-import type { SchoolClass } from '@/types';
-import CreateClassModal from '@/components/teacher/CreateClassModal'; 
+import { getClassesForTeacher } from '@/services/firestoreService'; // Your service function
+import type { SchoolClass } from '@/types'; // Your SchoolClass type
+import CreateClassModal from '@/components/teacher/CreateClassModal'; // Your modal component
+import { PlusCircle, BookOpen, Users, ChevronRight, FolderOpen, Loader2 } from 'lucide-react';
 
-export default function MyClassesPage() {
-  const { user } = useAuthStore();
+export default function TeacherClassesPage() {
+  const { userProfile } = useAuthStore();
+  const router = useRouter();
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchClasses = useCallback(async () => {
-    if (user) {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const fetchedClasses = await getClassesForTeacher(user.uid);
-        setClasses(fetchedClasses);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load classes.');
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      setIsLoading(false); // Not logged in, so not loading
-      setClasses([]); // Clear classes if no user
+    if (!userProfile?.uid) {
+      // setError("You need to be logged in to view classes."); // Or let AuthProvider handle
+      setIsLoading(false); // Stop loading if no user
+      return;
     }
-  }, [user]);
+    setIsLoading(true);
+    setError(null);
+    try {
+      const fetchedClasses = await getClassesForTeacher(userProfile.uid);
+      setClasses(fetchedClasses);
+    } catch (err: any) {
+      console.error("Error fetching classes:", err);
+      setError(err.message || "Failed to load classes. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userProfile?.uid]);
 
   useEffect(() => {
-    if (user) { // Only fetch if user is available
-        fetchClasses();
-    } else {
-        setIsLoading(false); // Set loading to false if no user
-        setClasses([]);
-    }
-  }, [user, fetchClasses]); // Rerun if user or fetchClasses changes
+    fetchClasses();
+  }, [fetchClasses]);
 
   const handleClassCreated = (newClassId: string) => {
-    fetchClasses(); 
-    console.log("New class created with ID:", newClassId);
+    console.log("New class created with ID:", newClassId, "Refreshing classes list...");
+    fetchClasses(); // Re-fetch classes to update the list
+    // Optionally, you could navigate to the new class details page:
+    // router.push(`/teacher/classes/${newClassId}`);
   };
 
-  if (isLoading && user) { // Show loading only if there's a user and we are actually loading
+  if (isLoading) {
     return (
-      <div className="text-center py-10">
+      <div className="flex items-center justify-center min-h-[calc(100vh-10rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mr-3" />
         <p className="text-lg text-gray-600">Loading your classes...</p>
-        {/* Spinner Icon */}
-        <svg className="animate-spin h-8 w-8 text-indigo-600 mx-auto mt-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
       </div>
     );
   }
 
   if (error) {
+    return <p className="text-center mt-10 p-4 text-red-600 bg-red-50 rounded-md">Error: {error}</p>;
+  }
+  
+  if (!userProfile) { // Should be handled by AuthProvider, but as a fallback
     return (
-      <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
-        <p className="font-bold">Error</p>
-        <p>{error} Please try refreshing the page.</p>
-      </div>
+        <div className="text-center mt-10 p-4">
+            <p className="text-gray-600 mb-4">Please log in to manage your classes.</p>
+            <Link href="/login" className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                Go to Login
+            </Link>
+        </div>
     );
   }
 
+
   return (
-    <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-xl">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b border-gray-200">
-        <h1 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-3 sm:mb-0">My Classes</h1>
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <header className="flex flex-col sm:flex-row justify-between items-center mb-8 pb-4 border-b border-gray-200">
+        <div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-indigo-800">My Classes</h1>
+            <p className="text-gray-600 mt-1 text-sm">Manage your student groups and assign work.</p>
+        </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-150 ease-in-out text-sm sm:text-base flex items-center justify-center"
+          className="mt-4 sm:mt-0 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-150 ease-in-out flex items-center text-sm"
         >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+          <PlusCircle size={20} className="mr-2" />
           Create New Class
         </button>
-      </div>
+      </header>
 
-      {classes.length === 0 && !isLoading && ( // Show no classes message only if not loading
-        <div className="text-center py-12">
-          <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-          </svg>
-          <h3 className="mt-3 text-xl font-semibold text-gray-800">No classes yet</h3>
-          <p className="mt-2 text-sm text-gray-500">Get started by creating your first class using the button above.</p>
+      {classes.length === 0 ? (
+        <div className="text-center py-10 px-4 border-2 border-dashed border-gray-300 rounded-lg bg-white shadow">
+          <FolderOpen className="mx-auto h-16 w-16 text-gray-400" />
+          <h2 className="mt-4 text-xl font-semibold text-gray-700">No classes yet</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Get started by creating your first class using the button above.
+          </p>
         </div>
-      )}
-
-      {classes.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {classes.map((schoolClass) => (
-            <div key={schoolClass.id} className="bg-gray-50 p-5 rounded-xl border border-gray-200 hover:shadow-lg transition-all duration-200 ease-in-out transform hover:-translate-y-1">
-              <h2 className="text-lg font-semibold text-indigo-700 truncate mb-1">{schoolClass.className}</h2>
-              <p className="text-sm text-gray-600">
-                {schoolClass.studentIds.length} student{schoolClass.studentIds.length !== 1 ? 's' : ''}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                Created: {new Date(schoolClass.createdAt).toLocaleDateString()}
-              </p>
-              <div className="mt-4 pt-3 border-t border-gray-200">
-                <Link href={`/teacher/classes/${schoolClass.id}`} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium group flex items-center">
-                  View Class 
-                  <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-                </Link>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {classes.map((cls) => (
+            <Link href={`/teacher/classes/${cls.id}`} key={cls.id} className="block group">
+              <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out overflow-hidden h-full flex flex-col">
+                <div className="p-6 flex-grow">
+                  <div className="flex items-center mb-3">
+                    <BookOpen size={24} className="text-indigo-500 mr-3 flex-shrink-0" />
+                    <h2 className="text-xl font-semibold text-indigo-700 truncate group-hover:text-indigo-800 transition-colors">
+                      {cls.className}
+                    </h2>
+                  </div>
+                  <div className="flex items-center text-xs text-gray-500 mb-1">
+                    <Users size={14} className="mr-1.5" />
+                    <span>{cls.studentIds?.length || 0} Students</span>
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    Created: {cls.createdAt ? new Date(cls.createdAt).toLocaleDateString() : 'N/A'}
+                  </p>
+                  {/* Add more details like number of assignments, etc. later */}
+                </div>
+                <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end items-center">
+                    <span className="text-sm text-indigo-600 group-hover:text-indigo-700 font-medium">
+                        View Class
+                    </span>
+                    <ChevronRight size={18} className="ml-1 text-indigo-600 group-hover:text-indigo-700 transition-transform group-hover:translate-x-1" />
+                </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}
@@ -117,7 +133,7 @@ export default function MyClassesPage() {
       <CreateClassModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onClassCreated={handleClassCreated}
+        onClassCreated={handleClassCreated} // Pass the callback here
       />
     </div>
   );

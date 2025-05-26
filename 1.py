@@ -1,266 +1,270 @@
 import os
 
-# Define the target file path relative to the project root
-TARGET_FILE_PATH = "functions/src/index.ts"
+# Define the base directory for these components
+BASE_COMPONENTS_DIR = "src/components/worksheets"
 
-# The complete new content for the file
-NEW_FILE_CONTENT = r"""import * as functions from "firebase-functions/v1";
-import * as admin from "firebase-admin";
+# --- Component: KeywordTooltipWrapper.tsx ---
+KEYWORD_TOOLTIP_WRAPPER_CONTENT = r"""// src/components/worksheets/KeywordTooltipWrapper.tsx
+"use client";
 
-if (admin.apps.length === 0) {
-  admin.initializeApp();
+import React, { useState } from 'react';
+
+interface KeywordTooltipWrapperProps {
+  term: string; // The text to display
+  definition: string; // The definition to show in the tooltip
+  children?: React.ReactNode; // Optional: if you want to wrap other elements
 }
 
-const db = admin.firestore();
-const auth = admin.auth();
+const KeywordTooltipWrapper: React.FC<KeywordTooltipWrapperProps> = ({ term, definition, children }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
 
-// --- Helper functions for username and password generation ---
-const ADJECTIVES = [
-  "Agile", "Bright", "Clever", "Daring", "Eager", "Fancy", "Gentle", "Happy", "Jolly", "Keen",
-  "Lively", "Merry", "Noble", "Placid", "Quiet", "Regal", "Sharp", "Tranquil", "Vivid", "Witty",
-  "Brave", "Calm", "Chic", "Cool", "Epic", "Fair", "Fine", "Glad", "Grand", "Great",
-  "Kind", "Lucky", "Major", "Mint", "Nice", "Prime", "Proud", "Quick", "Rapid", "Smart",
-  "Sound", "Spry", "Super", "Swift", "Top", "Vast", "Wise", "Zany", "Zippy", "Alpha",
-  "Beta", "Delta", "Gamma", "Omega", "Sigma", "Zeta", "Amber", "Azure", "Blue", "Bronze",
-  "Coral", "Crimson", "Denim", "Emerald", "Gold", "Green", "Indigo", "Ivory", "Jade", "Khaki",
-  "Lavender", "Lime", "Magenta", "Maroon", "Mauve", "Navy", "Olive", "Orange", "Orchid", "Peach",
-  "Perl", "Pink", "Plum", "Purple", "Red", "Rose", "Ruby", "Saffron", "Salmon", "Sapphire",
-  "Scarlet", "Silver", "Teal", "Aqua", "Beige", "Black", "Brown", "Gray", "White", "Yellow",
-];
-const NOUNS = [
-  "Ape", "Badger", "Bear", "Cat", "Deer", "Dog", "Elk", "Fox", "Goat", "Hare",
-  "Ibex", "Jaguar", "Koala", "Lion", "Lynx", "Mole", "Mouse", "Newt", "Otter", "Panda",
-  "Puma", "Rabbit", "Raccoon", "Seal", "Skunk", "Sloth", "Snake", "Tiger", "Viper", "Wolf",
-  "Wombat", "Yak", "Zebra", "Ant", "Bee", "Bug", "Fly", "Moth", "Wasp", "Bat",
-  "Bird", "Crane", "Crow", "Dove", "Duck", "Eagle", "Egret", "Falcon", "Finch", "Goose",
-  "Gull", "Hawk", "Heron", "Ibis", "Jay", "Kestrel", "Kingfisher", "Kite", "Lark", "Loon",
-  "Magpie", "Martin", "Meadowlark", "Nighthawk", "Oriole", "Osprey", "Owl", "Parrot", "Pelican", "Penguin",
-  "Petrel", "Pigeon", "Plover", "Puffin", "Quail", "Raven", "Robin", "Rook", "Sandpiper", "Sparrow",
-  "Starling", "Stork", "Swallow", "Swan", "Swift", "Tern", "Thrush", "Toucan", "Turkey", "Vulture",
-  "Warbler", "Woodpecker", "Wren", "Cod", "Crab", "Eel", "Fish", "Fluke", "Hake", "Herring",
-  "Ling", "Mackerel", "Perch", "Pike", "Plaice", "Ray", "Salmon", "Sardine", "Shark", "Skate",
-  "Sole", "Sprat", "Stingray", "Sturgeon", "Swordfish", "Trout", "Tuna", "Turbot", "Whiting", "Gnat",
-];
+  // Basic styling for the keyword and tooltip.
+  // You can enhance this with Tailwind classes passed as props or more complex CSS.
+  // This styling is inspired by your original style.css for .keyword and .tooltip
+  const keywordStyle: React.CSSProperties = {
+    position: 'relative',
+    borderBottom: '2px dotted #60a5fa', // Tailwind blue-400
+    cursor: 'help',
+    fontWeight: 600,
+    color: '#2563eb', // Tailwind blue-600
+    display: 'inline-block', // Important for positioning the tooltip correctly relative to the text
+  };
 
-function generateUsername(): string {
-  const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
-  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
-  const num = Math.floor(Math.random() * 90) + 10; // Random 2-digit number
-  return `${adj.toLowerCase()}-${noun.toLowerCase()}${num}`;
-}
+  const tooltipStyle: React.CSSProperties = {
+    visibility: showTooltip ? 'visible' : 'hidden',
+    width: '280px',
+    backgroundColor: '#1f2937', // Tailwind gray-800
+    color: '#fff',
+    textAlign: 'left',
+    borderRadius: '6px',
+    padding: '8px 12px',
+    position: 'absolute',
+    zIndex: 50,
+    bottom: '125%', // Position above the keyword
+    left: '50%',
+    marginLeft: '-140px', // Center the tooltip (half of its width)
+    opacity: showTooltip ? 1 : 0,
+    transition: 'opacity 0.3s, visibility 0.3s',
+    fontSize: '0.8rem',
+    fontWeight: 400,
+    lineHeight: 1.4,
+    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+    pointerEvents: 'none', // So it doesn't interfere with mouse events on the term itself if needed
+  };
 
-async function isUsernameUnique(username: string): Promise<boolean> {
-  const usersRef = db.collection("users");
-  const snapshot = await usersRef.where("username", "==", username).limit(1).get();
-  return snapshot.empty;
-}
+  return (
+    <span
+      style={keywordStyle}
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+      onFocus={() => setShowTooltip(true)} // For accessibility
+      onBlur={() => setShowTooltip(false)}  // For accessibility
+      tabIndex={0} // Make it focusable
+      aria-describedby={`tooltip-for-${term.replace(/\s+/g, '-').toLowerCase()}`}
+    >
+      {children || term}
+      <span style={tooltipStyle} role="tooltip" id={`tooltip-for-${term.replace(/\s+/g, '-').toLowerCase()}`}>
+        {definition}
+      </span>
+    </span>
+  );
+};
 
-async function generateUniqueUsername(): Promise<string> {
-  let username = generateUsername();
-  let attempts = 0;
-  while (!(await isUsernameUnique(username)) && attempts < 10) {
-    username = generateUsername();
-    attempts++;
-  }
-  if (attempts >= 10) {
-    // Fallback if truly unique username is hard to find quickly
-    return `${username}${Date.now().toString().slice(-4)}`;
-  }
-  return username;
-}
-
-function generatePassword(length: number = 10): string {
-  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
-  let password = "";
-  for (let i = 0; i < length; i++) {
-    password += charset.charAt(Math.floor(Math.random() * charset.length));
-  }
-  return password;
-}
-// --- End of helper functions ---
-
-interface BulkCreateStudentsPayload {
-  classId: string;
-  count: number; // Changed from students array to count
-}
-
-export const bulkCreateStudents = functions
-  .region("europe-west1") // Ensure this is your desired region
-  .https.onCall(async (data: BulkCreateStudentsPayload, context: functions.https.CallableContext) => {
-    if (!context.auth) {
-      functions.logger.error("Authentication Error: User not authenticated.");
-      throw new functions.https.HttpsError(
-        "unauthenticated",
-        "The function must be called while authenticated."
-      );
-    }
-
-    const teacherUid = context.auth.uid;
-    const { classId, count } = data; // Destructure count
-
-    if (!classId || typeof count !== 'number' || count <= 0) {
-      functions.logger.error("Invalid Argument Error: Missing or invalid classId or count.", data);
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Missing or invalid classId or count."
-      );
-    }
-    if (count > 50) { // Max limit
-      functions.logger.warn(`Attempt to create ${count} students, exceeding limit of 50.`, { teacherUid, classId });
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Cannot create more than 50 students at a time."
-      );
-    }
-
-    let classNameForEmail = "class";
-    try {
-      const classRef = db.collection("classes").doc(classId);
-      const classDoc = await classRef.get();
-
-      if (!classDoc.exists) {
-        functions.logger.error(`Class Not Found Error: classId ${classId} does not exist.`);
-        throw new functions.https.HttpsError("not-found", "Class not found.");
-      }
-      const classData = classDoc.data();
-      if (classData?.teacherId !== teacherUid) {
-        functions.logger.error(`Permission Denied: Teacher ${teacherUid} attempted to modify class ${classId} owned by ${classData?.teacherId}.`);
-        throw new functions.https.HttpsError(
-          "permission-denied",
-          "You do not have permission to add students to this class."
-        );
-      }
-      if (classData?.className) {
-        classNameForEmail = classData.className.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "class";
-      }
-    } catch (error: unknown) {
-      functions.logger.error("Error verifying class ownership for classId " + classId + ":", error);
-      if (error instanceof functions.https.HttpsError) throw error;
-      let message = "Could not verify class ownership.";
-      if (error instanceof Error) {
-        message = error.message;
-      }
-      throw new functions.https.HttpsError("internal", message);
-    }
-
-    const createdStudentsInfo: Array<{
-      uid: string;
-      username: string;
-      email?: string;
-      password?: string; // To return the generated password
-    }> = [];
-    const studentCreationPromises = [];
-
-    for (let i = 0; i < count; i++) {
-      const username = await generateUniqueUsername();
-      const password = generatePassword(); // Generate password
-
-      const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
-      const placeholderEmail = `${username.replace(/[^a-zA-Z0-9]/g, "")}.${classNameForEmail}.${uniqueSuffix}@mgsstudent.system`;
-
-      studentCreationPromises.push(
-        auth.createUser({
-          email: placeholderEmail,
-          emailVerified: false, // Or true if you don't need verification step
-          password: password,
-          displayName: username,
-          disabled: false,
-        })
-          .then(async (userRecord) => {
-            await db.collection("users").doc(userRecord.uid).set({
-              username: username,
-              role: "student",
-              classIds: admin.firestore.FieldValue.arrayUnion(classId),
-              createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
-            await db.collection("classes").doc(classId).update({
-              studentIds: admin.firestore.FieldValue.arrayUnion(userRecord.uid),
-            });
-            createdStudentsInfo.push({ // Add to array to be returned
-              uid: userRecord.uid,
-              username: username,
-              email: placeholderEmail,
-              password: password, // Include the generated password
-            });
-            functions.logger.info(`Successfully created student: ${username} (UID: ${userRecord.uid}) and added to class: ${classId}`);
-            return userRecord.uid;
-          })
-          .catch((error: unknown) => {
-            let errorCode = "UNKNOWN_ERROR";
-            let errorMessage = "An unknown error occurred during student creation.";
-            if (error instanceof Error) {
-              errorMessage = error.message;
-              if (typeof error === "object" && error !== null && "code" in error) {
-                errorCode = String((error as { code: string }).code);
-              }
-            }
-            functions.logger.error(`Failed to create student ${username} (email: ${placeholderEmail}):`, errorCode, errorMessage, error);
-            // We don't throw here, just log and let Promise.all handle overall success/failure
-            return null; // Indicate failure for this specific student
-          })
-      );
-    }
-
-    try {
-      await Promise.all(studentCreationPromises);
-    } catch (error: unknown) {
-      // This catch might not be strictly necessary if individual promises handle their errors
-      // and don't reject the Promise.all, but it's good for overall logging.
-      functions.logger.error("Error during Promise.all for student creation (some students might have failed):", error);
-    }
-    
-    // Filter out any nulls from failed creations if necessary, though createdStudentsInfo only gets pushed successful ones.
-    if (createdStudentsInfo.length > 0) {
-      return {
-        success: true,
-        message: `${createdStudentsInfo.length} of ${count} students generated successfully.`,
-        createdStudents: createdStudentsInfo, // This array now includes passwords
-      };
-    } else if (count > 0 && createdStudentsInfo.length === 0) {
-      throw new functions.https.HttpsError(
-        "internal",
-        "No students were created. All attempts failed. Check server logs for details."
-      );
-    } else { // Should not happen if count > 0
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "No student data was provided or count was zero."
-      );
-    }
-  });
-
-// You might want to add the resetStudentPassword function here in the future
-// For now, focusing on fixing bulkCreateStudents
+export default KeywordTooltipWrapper;
 """
 
-def main():
-    """
-    Main function to update the specified Firebase Functions file.
-    """
-    project_root = os.getcwd() # Assumes script is run from project root
-    # If functions folder is not directly under project root, adjust path.
-    # For example, if your project root has a 'functions' folder:
-    # functions_folder_path = os.path.join(project_root, "functions")
-    # absolute_file_path = os.path.join(functions_folder_path, "src", "index.ts")
-    # Assuming TARGET_FILE_PATH is relative to where 'firebase.json' and 'functions' folder are.
-    
-    absolute_file_path = os.path.join(project_root, TARGET_FILE_PATH)
+# --- Component: StaticContentWithKeywords.tsx ---
+# This component will parse HTML for <keyword data-term="key">Text</keyword>
+# and replace them with KeywordTooltipWrapper components.
+# This requires a safe HTML parser or a specific approach.
+# For simplicity and safety, we'll use a regex-based approach here,
+# but for complex HTML, a proper parser (like 'html-react-parser') would be better.
+# This simplified version assumes keywords don't contain HTML themselves.
+STATIC_CONTENT_WITH_KEYWORDS_CONTENT = r"""// src/components/worksheets/StaticContentWithKeywords.tsx
+"use client";
 
+import React from 'react';
+import KeywordTooltipWrapper from './KeywordTooltipWrapper';
+// For a more robust solution with complex HTML, consider:
+// import parse, { domToReact, HTMLReactParserOptions, Element } from 'html-react-parser';
 
+interface StaticContentWithKeywordsProps {
+  htmlContent: string;
+  keywordsData: Record<string, string>; // e.g., { "cpu": "Central Processing Unit..." }
+}
+
+const StaticContentWithKeywords: React.FC<StaticContentWithKeywordsProps> = ({ htmlContent, keywordsData }) => {
+  if (!htmlContent || !keywordsData) {
+    return <div dangerouslySetInnerHTML={{ __html: htmlContent || "" }} />;
+  }
+
+  // Regex to find <keyword data-term="some-key">Displayed Text</keyword>
+  // This is a simplified parser. It might break with nested HTML within the keyword tag.
+  const keywordRegex = /<keyword data-term=["']([^"']+)["']>([^<]+)<\/keyword>/g;
+
+  const parts: (string | React.ReactNode)[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = keywordRegex.exec(htmlContent)) !== null) {
+    const [fullMatch, termKey, displayedText] = match;
+    const definition = keywordsData[termKey.toLowerCase()]; // Ensure keys are consistently cased
+
+    // Add the text before this match
+    if (match.index > lastIndex) {
+      parts.push(htmlContent.substring(lastIndex, match.index));
+    }
+
+    // Add the keyword component or text if definition not found
+    if (definition) {
+      parts.push(
+        <KeywordTooltipWrapper key={`${termKey}-${match.index}`} term={displayedText} definition={definition} />
+      );
+    } else {
+      // If no definition, just render the text without tooltip functionality
+      // or you could log a warning.
+      console.warn(`StaticContentWithKeywords: No definition found for keyword key: ${termKey}`);
+      parts.push(displayedText);
+    }
+    lastIndex = keywordRegex.lastIndex;
+  }
+
+  // Add any remaining text after the last match
+  if (lastIndex < htmlContent.length) {
+    parts.push(htmlContent.substring(lastIndex));
+  }
+
+  // Render the parts. Need to wrap in a div that can handle mixed string/ReactNode array.
+  // We also need to handle the original HTML structure.
+  // A more robust solution uses html-react-parser with a replace function.
+
+  // Simplified rendering for now: join string parts and render React nodes.
+  // This will lose the original HTML structure around the keywords if not careful.
+  // For a quick solution, we can render the parts.
+  // A better approach is to use html-react-parser:
+  /*
+  const options: HTMLReactParserOptions = {
+    replace: domNode => {
+      if (domNode instanceof Element && domNode.name === 'keyword') {
+        const termKey = domNode.attribs['data-term'];
+        const displayedText = domNode.children.length > 0 && domNode.children[0].type === 'text' ? domNode.children[0].data : termKey;
+        const definition = keywordsData[termKey?.toLowerCase()];
+        if (definition) {
+          return <KeywordTooltipWrapper term={displayedText} definition={definition} />;
+        }
+        return <>{displayedText}</>; // Fallback if no definition
+      }
+    }
+  };
+  return <div className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none text-gray-700">{parse(htmlContent, options)}</div>;
+  */
+
+  // Current simplified approach: Render the processed parts.
+  // This will render strings directly and KeywordTooltipWrapper components.
+  // It might not perfectly preserve all HTML structure if keywords are inside complex tags.
+  // The `prose` class helps style the raw HTML parts.
+  return (
+    <div className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none text-gray-700">
+      {parts.map((part, index) => (
+        typeof part === "string" ? 
+        <span key={index} dangerouslySetInnerHTML={{ __html: part }} /> : 
+        part 
+      ))}
+    </div>
+  );
+};
+
+export default StaticContentWithKeywords;
+"""
+
+# --- Component: KeywordGlossary.tsx ---
+KEYWORD_GLOSSARY_CONTENT = r"""// src/components/worksheets/KeywordGlossary.tsx
+"use client";
+
+import React from 'react';
+import KeywordTooltipWrapper from './KeywordTooltipWrapper';
+import StaticContentBlock from './StaticContentBlock'; // For the introduction
+
+interface KeywordGlossaryProps {
+  introduction?: string;
+  displayTermKeys: string[]; // Array of keys from keywordsData to display
+  keywordsData: Record<string, string>; // The main keywords dictionary
+}
+
+const KeywordGlossary: React.FC<KeywordGlossaryProps> = ({ introduction, displayTermKeys, keywordsData }) => {
+  if (!displayTermKeys || displayTermKeys.length === 0 || !keywordsData) {
+    return <p className="text-sm text-red-500">Keyword data missing for glossary.</p>;
+  }
+
+  return (
+    <div>
+      {introduction && <StaticContentBlock htmlContent={introduction} />}
+      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+        {displayTermKeys.map((termKey) => {
+          const definition = keywordsData[termKey.toLowerCase()]; // Ensure consistent key casing
+          // The term to display might be the key itself, or you might want a mapping
+          // if the key is e.g., "program-counter" but you want to display "Program Counter".
+          // For simplicity, we'll format the key.
+          const displayTerm = termKey
+            .split('-')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+
+          if (definition) {
+            return (
+              <KeywordTooltipWrapper
+                key={termKey}
+                term={displayTerm}
+                definition={definition}
+              />
+            );
+          } else {
+            console.warn(`KeywordGlossary: No definition found for term key: ${termKey}`);
+            // Render the term without tooltip if definition is missing
+            return <span key={termKey} className="font-semibold text-gray-700 p-1 border-b-2 border-dotted border-gray-400">{displayTerm} (Definition not found)</span>;
+          }
+        })}
+      </div>
+    </div>
+  );
+};
+
+export default KeywordGlossary;
+"""
+
+# Files to create and their content
+FILES_TO_CREATE = {
+    "KeywordTooltipWrapper.tsx": KEYWORD_TOOLTIP_WRAPPER_CONTENT,
+    "StaticContentWithKeywords.tsx": STATIC_CONTENT_WITH_KEYWORDS_CONTENT,
+    "KeywordGlossary.tsx": KEYWORD_GLOSSARY_CONTENT,
+}
+
+def create_file(file_path, content):
+    """Creates a file with the given content, ensuring directory exists."""
     try:
-        # Ensure the directory exists (src within functions)
-        os.makedirs(os.path.dirname(absolute_file_path), exist_ok=True)
-        
-        with open(absolute_file_path, 'w', encoding='utf-8') as f:
-            f.write(NEW_FILE_CONTENT)
-        
-        print(f"Successfully updated Firebase Functions file: {absolute_file_path}")
-        print("Please remember to deploy your Firebase Functions after this update using 'firebase deploy --only functions'")
-
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        print(f"Successfully created file: {file_path}")
     except IOError as e:
-        print(f"Error writing to file {absolute_file_path}: {e}")
+        print(f"Error creating file {file_path}: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(f"An unexpected error occurred while creating {file_path}: {e}")
+
+def main():
+    project_root = os.getcwd()
+    base_path = os.path.join(project_root, BASE_COMPONENTS_DIR)
+
+    print(f"Creating keyword-related worksheet components in {base_path}...")
+
+    for file_name, content in FILES_TO_CREATE.items():
+        absolute_file_path = os.path.join(base_path, file_name)
+        create_file(absolute_file_path, content)
+    
+    print("\nKeyword component file creation process finished.")
+    print("Next steps will involve creating components for other interactive elements like diagrams and fill-in-the-blanks,")
+    print("and then updating Worksheet.tsx and Section.tsx to use these new components.")
+    print("Consider installing 'html-react-parser' for a more robust StaticContentWithKeywords component if you encounter issues with complex HTML.")
 
 if __name__ == "__main__":
     main()
