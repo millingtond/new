@@ -2,6 +2,22 @@ import os
 
 # --- File Contents ---
 
+# This variable needs to be accessible by the main function
+types_index_ts_additions = """
+// Added by create_student_addition_components.py
+export interface StudentUser {
+  uid: string; // Firebase Auth UID
+  username: string; // e.g., "clever-fox"
+  role: 'student';
+  classIds: string[]; // List of class IDs the student is enrolled in
+}
+
+export interface GeneratedStudentCredential {
+  username: string;
+  passwordString: string; 
+}
+"""
+
 credential_generator_content = """// src/utils/credentialGenerator.ts
 const adjectives = [
   'Agile', 'Bright', 'Clever', 'Quick', 'Sharp', 'Wise', 'Swift', 'Keen', 'Calm', 'Brave',
@@ -231,16 +247,8 @@ export default function BulkAddStudentsModal({
 }
 """
 
-firebase_config_update_needed = """
-// In src/config/firebase.ts
-// YOU NEED TO MANUALLY ADD/UPDATE THIS SCRIPT CANNOT SAFELY AUTOMATE IT
-// Add the import for getFunctions:
-// import { getFunctions } from "firebase/functions";
-
-// Initialize functions and add to exports:
-// const functions = getFunctions(app);
-// export { app, auth, db, functions }; // Add functions here
-"""
+# firebase_config_update_needed is just a comment string, not used by this script directly
+# It's a reminder for manual update which was covered.
 
 class_details_page_updated_content = """// src/app/(platform)/teacher/classes/[classId]/page.tsx
 // This file was updated by create_student_addition_components.py
@@ -258,7 +266,7 @@ import BulkAddStudentsModal from '@/components/teacher/BulkAddStudentsModal'; //
 export default function ClassDetailsPage() {
   const params = useParams();
   const classId = params.classId as string;
-  const router = useRouter();
+  const router = useRouter(); // Keep if needed for other actions
   const { user } = useAuthStore();
 
   const [schoolClass, setSchoolClass] = useState<SchoolClass | null>(null);
@@ -299,7 +307,7 @@ export default function ClassDetailsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, classId]); // Removed router from dependencies as it's not used in this specific fetch
+  }, [user, classId]); 
 
   useEffect(() => {
     if (user && classId) {
@@ -310,7 +318,7 @@ export default function ClassDetailsPage() {
   }, [user, classId, fetchClassDetails]);
 
   const handleStudentsAdded = () => {
-    fetchClassDetails(); // Refetch class details to update student count, etc.
+    fetchClassDetails(); 
   };
 
   if (isLoading) {
@@ -370,35 +378,44 @@ export default function ClassDetailsPage() {
         )}
       </div>
 
-      <BulkAddStudentsModal
-        isOpen={isAddStudentsModalOpen}
-        onClose={() => setIsAddStudentsModalOpen(false)}
-        classId={classId}
-        className={schoolClass.className}
-        onStudentsAdded={handleStudentsAdded}
-      />
+      {isAddStudentsModalOpen && schoolClass && (
+        <BulkAddStudentsModal
+          isOpen={isAddStudentsModalOpen}
+          onClose={() => setIsAddStudentsModalOpen(false)}
+          classId={classId}
+          className={schoolClass.className}
+          onStudentsAdded={handleStudentsAdded}
+        />
+      )}
     </div>
   );
 }
 """
-
 # --- End File Contents ---
 
 def append_to_file(file_path, content_to_append, project_root="."):
-    # (Same as previous script)
     full_path = os.path.join(project_root, file_path)
     try:
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        with open(full_path, 'a+', encoding='utf-8') as f: # Use 'a+' to read and append
-            f.seek(0) # Go to the beginning to read
+        with open(full_path, 'a+', encoding='utf-8') as f:
+            f.seek(0) 
             existing_content = f.read()
-            # Normalize whitespace for a more robust check, checking if a key part exists
-            key_part_of_addition = content_to_append.strip().splitlines()[1] # e.g. "export interface StudentUser"
-            if key_part_of_addition not in existing_content:
-                f.write("\n" + content_to_append.strip() + "\n")
+            # A simple check to avoid exact duplication if script is run multiple times
+            # This checks if the first significant line of the addition is already present
+            key_part_of_addition = ""
+            stripped_addition = content_to_append.strip()
+            if stripped_addition: # Ensure content_to_append is not empty
+                first_meaningful_line = next((line for line in stripped_addition.splitlines() if line.strip() and not line.strip().startswith("//")), None)
+                if first_meaningful_line:
+                    key_part_of_addition = first_meaningful_line.strip()
+            
+            if key_part_of_addition and key_part_of_addition not in existing_content:
+                f.write("\n" + stripped_addition + "\n")
                 print(f"SUCCESS: Appended to file: {full_path}")
+            elif not key_part_of_addition:
+                 print(f"INFO: Content to append to {full_path} is empty or only comments. Skipping.")
             else:
-                print(f"INFO: Content likely already exists in {full_path}. Skipping append for this block.")
+                print(f"INFO: Content likely already exists in {full_path} (key part: '{key_part_of_addition}'). Skipping append for this block.")
     except FileNotFoundError:
         write_file(file_path, "// Created by script\n" + content_to_append.strip() + "\n", project_root)
     except IOError as e:
@@ -406,7 +423,6 @@ def append_to_file(file_path, content_to_append, project_root="."):
 
 
 def write_file(file_path, content, project_root="."):
-    # (Same as previous script)
     full_path = os.path.join(project_root, file_path)
     try:
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
@@ -420,43 +436,47 @@ def main():
     project_root = os.getcwd()
     print(f"--- Creating Student Addition Components & Updating Files ---")
     
-    # File paths
-    types_index_file = os.path.join("src", "types", "index.ts")
-    credential_generator_file = os.path.join("src", "utils", "credentialGenerator.ts")
-    bulk_add_modal_file = os.path.join("src", "components", "teacher", "BulkAddStudentsModal.tsx")
-    class_details_page_file = os.path.join("src", "app", "(platform)", "teacher", "classes", "[classId]", "page.tsx") # For updating
+    # File paths - ensure these variables match what's used below
+    types_index_file_path = os.path.join("src", "types", "index.ts") # Renamed variable
+    credential_generator_file_path = os.path.join("src", "utils", "credentialGenerator.ts") # Renamed variable
+    bulk_add_modal_file_path = os.path.join("src", "components", "teacher", "BulkAddStudentsModal.tsx") # Renamed variable
+    class_details_page_file_path = os.path.join("src", "app", "(platform)", "teacher", "classes", "[classId]", "page.tsx") # Renamed variable
 
-    print(f"\nStep 1: Appending StudentUser and GeneratedStudentCredential types to {types_index_file}...")
-    append_to_file(types_index_file, types_index_ts_additions, project_root)
+    print(f"\nStep 1: Appending StudentUser and GeneratedStudentCredential types to {types_index_file_path}...")
+    # Ensure types directory exists
+    os.makedirs(os.path.join(project_root, "src", "types"), exist_ok=True)
+    # Check if types/index.ts exists, if not create it with a basic valid export
+    initial_types_content = "// Main types export file\nexport type {};\n"
+    if not os.path.exists(os.path.join(project_root, types_index_file_path)):
+        write_file(types_index_file_path, initial_types_content, project_root)
+        print(f"INFO: Created an initial empty {types_index_file_path} as it was missing.")
+    append_to_file(types_index_file_path, types_index_ts_additions, project_root) # Now types_index_ts_additions is defined
 
-    print(f"\nStep 2: Creating credential generator utility ({credential_generator_file})...")
-    write_file(credential_generator_file, credential_generator_content, project_root)
+    print(f"\nStep 2: Creating credential generator utility ({credential_generator_file_path})...")
+    write_file(credential_generator_file_path, credential_generator_content, project_root)
 
-    print(f"\nStep 3: Creating BulkAddStudentsModal component ({bulk_add_modal_file})...")
-    write_file(bulk_add_modal_file, bulk_add_students_modal_content, project_root)
+    print(f"\nStep 3: Creating BulkAddStudentsModal component ({bulk_add_modal_file_path})...")
+    write_file(bulk_add_modal_file_path, bulk_add_students_modal_content, project_root)
 
-    print(f"\nStep 4: Updating Class Details page ({class_details_page_file}) to use the modal...")
-    # Overwrite the existing class details page with the new version that includes the modal logic
-    write_file(class_details_page_file, class_details_page_updated_content, project_root)
-
+    print(f"\nStep 4: Updating Class Details page ({class_details_page_file_path}) to use the modal...")
+    os.makedirs(os.path.dirname(os.path.join(project_root, class_details_page_file_path)), exist_ok=True)
+    write_file(class_details_page_file_path, class_details_page_updated_content, project_root)
+    
     print("\n--- File Creation for Student Addition Components Complete ---")
     print("\nACTION REQUIRED (MANUAL STEP for src/config/firebase.ts):")
     print("The BulkAddStudentsModal uses Firebase Functions. You need to update 'src/config/firebase.ts':")
     print("1. Add the import: import { getFunctions } from 'firebase/functions';")
     print("2. Initialize functions: const functions = getFunctions(app);")
     print("3. Add 'functions' to the export: export { app, auth, db, functions };")
-    print(f"The Python script cannot safely automate this specific modification to existing complex code.")
     
-    print("\nNEXT MAJOR STEP (Firebase Cloud Function - To be done separately):")
-    print("You will need to create and deploy a Firebase Cloud Function named 'bulkCreateStudents'.")
-    print("This function will securely create Firebase Auth users and Firestore documents for students.")
-    print("We will cover the code for this Cloud Function next.")
-
-    print("\nAfter manual update to firebase.ts and deploying the cloud function:")
+    print("\nNEXT MAJOR STEP (Firebase Cloud Function - if not already done):")
+    print("Ensure your Firebase Cloud Function named 'bulkCreateStudents' is deployed.")
+    
+    print("\nAfter manual update to firebase.ts and deploying the cloud function (if needed):")
     print("1. Restart your dev server ('npm run dev').")
     print("2. Navigate to a class details page (e.g., /teacher/classes/<classId>).")
     print("3. Click 'Add Students'. The modal should appear.")
-    print("4. Attempting to generate credentials will try to call the (not yet deployed) cloud function.")
+    print("4. Attempting to generate credentials will call the cloud function.")
 
 if __name__ == "__main__":
     main()

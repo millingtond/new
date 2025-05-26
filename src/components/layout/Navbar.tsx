@@ -20,7 +20,7 @@ export default function Navbar() {
       await signOut(auth);
       setUser(null); // Clear user from Zustand store
       router.push('/login'); // Redirect to login page
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Logout Error:", error);
       setError("Failed to logout. Please try again.");
     } finally {
