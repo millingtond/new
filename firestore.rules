@@ -3,71 +3,105 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users Collection (/users/{userId})
-    // - Authenticated users can read their own profile.
-    // - Authenticated users can update their own profile (e.g., passwordNeedsReset, classIds if student adds/drops).
-    // - Creating user profiles is typically handled by a trusted server environment (like your Firebase Functions upon account creation).
+    // Helper function to check if a user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the requesting user is a specific role
+    // Assumes 'users' collection exists and user documents have a 'role' field
+    function hasRole(userId, roleName) {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(userId)).data.role == roleName;
+    }
+
+    // Users Collection:
+    // - Users can read and update their own profile.
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null && request.auth.uid == userId;
-      // allow create: if request.auth != null; // Be cautious with create rules; often done via backend.
+      allow read, update: if isAuthenticated() && request.auth.uid == userId;
+      // Allow create for new users (e.g. during signup/account creation)
+      allow create: if isAuthenticated(); 
+      allow delete: if false; // Typically restricted
     }
 
-    // Classes Collection (/classes/{classId})
+    // Classes Collection:
     // - Teachers can create classes.
-    // - Only the teacher who owns a class can read or modify it.
-    // - Students can read classes they are enrolled in (if you store studentIds directly on class or use subcollections).
+    // - Teacher owner can update/delete.
+    // - Enrolled students (via classIds in their user doc) and the teacher owner can read.
     match /classes/{classId} {
-      allow read: if request.auth != null && 
-                    (resource.data.teacherId == request.auth.uid || request.auth.uid in resource.data.studentIds);
-      allow create: if request.auth != null && request.resource.data.teacherId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.teacherId == request.auth.uid;
+      allow read: if isAuthenticated() && 
+                     (hasRole(request.auth.uid, 'teacher') && resource.data.teacherId == request.auth.uid || 
+                      hasRole(request.auth.uid, 'student') && classId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.classIds);
+      allow create: if hasRole(request.auth.uid, 'teacher') && request.resource.data.teacherId == request.auth.uid;
+      allow update, delete: if hasRole(request.auth.uid, 'teacher') && resource.data.teacherId == request.auth.uid;
     }
 
-    // Worksheets Collection (/worksheets/{worksheetId})
-    // - Authenticated users (teachers and students) can read worksheets.
-    // - Writing worksheets is typically an admin/teacher function done via backend or console.
+    // Worksheets Collection:
+    // - Authenticated users (both students and teachers) can read worksheets.
+    // - Only teachers can create, update, or delete worksheets.
     match /worksheets/{worksheetId} {
-      allow read: if request.auth != null;
-      // allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher'; // Example if teachers can create/edit
-      allow write: if false; // For now, assume worksheets are added via script/console
+      allow read: if isAuthenticated(); // Allows any authenticated user to read
+      allow create, update, delete: if hasRole(request.auth.uid, 'teacher');
     }
 
-    // Assignments Collection (/assignments/{assignmentId})
-    // - Teachers can create assignments for their classes.
-    // - Students can read assignments for classes they are part of.
-    // - Teachers can read/delete assignments they created.
+    // Assignments Collection:
+    // - Teachers can manage assignments.
+    // - Students in the assigned class can read the assignment.
     match /assignments/{assignmentId} {
-      allow read: if request.auth != null; // Students will filter client-side based on their classIds
-      allow create: if request.auth != null && 
-                       get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher' &&
-                       request.resource.data.teacherId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.teacherId == request.auth.uid;
+      allow read: if isAuthenticated() && 
+                     (hasRole(request.auth.uid, 'teacher') && resource.data.teacherId == request.auth.uid ||
+                      hasRole(request.auth.uid, 'student') && resource.data.classId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.classIds);
+      allow create: if hasRole(request.auth.uid, 'teacher') && request.resource.data.teacherId == request.auth.uid;
+      allow update, delete: if hasRole(request.auth.uid, 'teacher') && resource.data.teacherId == request.auth.uid;
     }
 
-    // StudentProgress Collection (/studentProgress/{assignmentId_studentId} or just {progressId})
-    // The example you provided uses {assignmentId} as the document ID, which means
-    // the student's progress for a given assignment is one document.
-    // The `studentId` field within that document is used for ownership.
-    match /studentProgress/{progressId} {
-      // Allow a student to create their progress document if studentId in the new doc matches their UID.
-      allow create: if request.auth != null && request.resource.data.studentId == request.auth.uid;
+    // StudentProgress Collection:
+    // - Document ID is the `assignmentId`.
+    // - Students can create, read, and update their OWN progress.
+    // - Teachers can read/update progress for assignments linked to their classes (simplified: if they are the teacher on the assignment).
+    match /studentProgress/{progressId} { // progressId is the assignmentId
       
-      // Allow a student to read and write (update) their own progress document.
-      allow read, update: if request.auth != null && resource.data.studentId == request.auth.uid;
-      
-      // Teachers might also need to read progress for students in their classes.
-      // This is more complex and might involve checking the assignment's classId and teacherId.
-      // Example for teacher read (simplified, assuming assignment details are in studentProgress doc or fetched separately):
-      // allow read: if request.auth != null && (
-      //   resource.data.studentId == request.auth.uid ||
-      //   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher' // Add check for class ownership
-      // );
-      
-      // Delete might be restricted or allowed for students to delete their own attempts.
-      allow delete: if request.auth != null && resource.data.studentId == request.auth.uid;
-    }
+      // Allow a student to attempt to get their progress doc, or a teacher to get any progress doc
+      // (further read/write rules will refine this)
+      allow get: if isAuthenticated(); 
 
-    // Add rules for any other collections you have.
+      allow list: if false; // Generally, don't allow listing all progress
+
+      // Students can read their own progress. Teachers can read progress for their assignments.
+      allow read: if isAuthenticated() &&
+                     ( (hasRole(request.auth.uid, 'student') && resource.data.studentId == request.auth.uid) ||
+                       (hasRole(request.auth.uid, 'teacher') && resource.data.teacherId == request.auth.uid) 
+                     );
+                     // Note: Assumes 'teacherId' (teacher who created assignment) is stored in studentProgress doc.
+
+      // Students can create their own progress doc.
+      allow create: if isAuthenticated() &&
+                       hasRole(request.auth.uid, 'student') &&
+                       request.resource.data.studentId == request.auth.uid &&
+                       request.resource.data.assignmentId == progressId && 
+                       request.resource.data.worksheetId != null &&
+                       request.resource.data.teacherId != null; // Ensure teacherId is set on create
+
+      // Students can update their own progress (not changing key IDs).
+      // Teachers can update progress for their assignments (e.g. grading).
+      allow update: if isAuthenticated() &&
+                       (
+                         (hasRole(request.auth.uid, 'student') && 
+                          resource.data.studentId == request.auth.uid &&
+                          request.resource.data.studentId == resource.data.studentId &&
+                          request.resource.data.worksheetId == resource.data.worksheetId &&
+                          request.resource.data.assignmentId == resource.data.assignmentId &&
+                          request.resource.data.teacherId == resource.data.teacherId // Student cannot change teacherId
+                         ) ||
+                         (hasRole(request.auth.uid, 'teacher') && 
+                          resource.data.teacherId == request.auth.uid && // Teacher owns this progress/assignment
+                          request.resource.data.studentId == resource.data.studentId && // Teacher cannot change student owner
+                          request.resource.data.assignmentId == resource.data.assignmentId &&
+                          request.resource.data.worksheetId == resource.data.worksheetId
+                           // Teacher can change status, score, teacherFeedback etc.
+                         )
+                       );
+      
+      allow delete: if false; // Or specific admin/teacher conditions
+    }
   }
 }
