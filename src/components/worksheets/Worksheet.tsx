@@ -33,6 +33,8 @@ const WorksheetComponent: React.FC<WorksheetComponentProps> = ({
     return <p className="text-center mt-10 p-4 text-red-600 bg-red-50 rounded-md">Error: {error}</p>;
   }
 
+    const { keywordsData } = worksheet;
+
   if (!worksheet) {
     return <p className="text-center mt-10 p-4 text-gray-500">No worksheet data available.</p>;
   }
@@ -92,6 +94,8 @@ const WorksheetComponent: React.FC<WorksheetComponentProps> = ({
             isReadOnly={isReadOnly}
             answers={answers}
             onAnswerChange={onAnswerChange}
+            // Pass keywordsData to each section
+            keywordsData={keywordsData} 
           />
         ))
       ) : (
