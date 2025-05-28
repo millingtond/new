@@ -3,105 +3,79 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if the requesting user is a specific role
-    // Assumes 'users' collection exists and user documents have a 'role' field
-    function hasRole(userId, roleName) {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(userId)).data.role == roleName;
-    }
-
     // Users Collection:
-    // - Users can read and update their own profile.
+    // Users can read and write their own profile information.
+    // Assumes a 'role' field might exist (e.g., 'student', 'teacher').
     match /users/{userId} {
-      allow read, update: if isAuthenticated() && request.auth.uid == userId;
-      // Allow create for new users (e.g. during signup/account creation)
-      allow create: if isAuthenticated(); 
-      allow delete: if false; // Typically restricted
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Example: allow admin to read all user profiles (requires admin claim or role check)
+      // allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     // Classes Collection:
-    // - Teachers can create classes.
-    // - Teacher owner can update/delete.
-    // - Enrolled students (via classIds in their user doc) and the teacher owner can read.
+    // - Authenticated users can read classes they are part of (either as teacher or student).
+    // - Only teachers can create classes.
+    // - Only the teacher who owns the class can update or delete it.
+    // Assumes 'classes' documents have a 'teacherId' field and a 'studentUserIds' array field.
     match /classes/{classId} {
-      allow read: if isAuthenticated() && 
-                     (hasRole(request.auth.uid, 'teacher') && resource.data.teacherId == request.auth.uid || 
-                      hasRole(request.auth.uid, 'student') && classId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.classIds);
-      allow create: if hasRole(request.auth.uid, 'teacher') && request.resource.data.teacherId == request.auth.uid;
-      allow update, delete: if hasRole(request.auth.uid, 'teacher') && resource.data.teacherId == request.auth.uid;
+      allow read: if request.auth != null &&
+                    (resource.data.teacherId == request.auth.uid || request.auth.uid in resource.data.studentUserIds);
+      allow create: if request.auth != null && request.resource.data.teacherId == request.auth.uid &&
+                       get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+      allow update, delete: if request.auth != null && resource.data.teacherId == request.auth.uid &&
+                               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
     }
 
-    // Worksheets Collection:
-    // - Authenticated users (both students and teachers) can read worksheets.
-    // - Only teachers can create, update, or delete worksheets.
-    match /worksheets/{worksheetId} {
-      allow read: if isAuthenticated(); // Allows any authenticated user to read
-      allow create, update, delete: if hasRole(request.auth.uid, 'teacher');
+    // New Worksheets Content (if stored in Firestore)
+    // - All authenticated users (students and teachers) can read worksheet definitions.
+    // - Writing worksheet content should be restricted (e.g., to admins via console/backend function).
+    match /newWorksheets/{worksheetId} {
+      allow read: if request.auth != null;
+      // Example: allow write only by admins (not shown here, typically done via backend)
+      // allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     // Assignments Collection:
-    // - Teachers can manage assignments.
-    // - Students in the assigned class can read the assignment.
+    // - Teachers can create, read, update, delete assignments.
+    // - Students can read assignments relevant to their class(es).
+    // Assumes 'assignments' documents have 'teacherId' and 'classId' fields.
+    // Assumes 'users/{userId}' documents have 'classIds' array for students.
     match /assignments/{assignmentId} {
-      allow read: if isAuthenticated() && 
-                     (hasRole(request.auth.uid, 'teacher') && resource.data.teacherId == request.auth.uid ||
-                      hasRole(request.auth.uid, 'student') && resource.data.classId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.classIds);
-      allow create: if hasRole(request.auth.uid, 'teacher') && request.resource.data.teacherId == request.auth.uid;
-      allow update, delete: if hasRole(request.auth.uid, 'teacher') && resource.data.teacherId == request.auth.uid;
+      allow read: if request.auth != null &&
+                    ( (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher' &&
+                       resource.data.teacherId == request.auth.uid) ||
+                      (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'student' &&
+                       resource.data.classId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.classIds)
+                    );
+      allow create: if request.auth != null &&
+                       request.resource.data.teacherId == request.auth.uid &&
+                       get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+      allow update, delete: if request.auth != null &&
+                               resource.data.teacherId == request.auth.uid &&
+                               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
     }
 
-    // StudentProgress Collection:
-    // - Document ID is the `assignmentId`.
-    // - Students can create, read, and update their OWN progress.
-    // - Teachers can read/update progress for assignments linked to their classes (simplified: if they are the teacher on the assignment).
-    match /studentProgress/{progressId} { // progressId is the assignmentId
-      
-      // Allow a student to attempt to get their progress doc, or a teacher to get any progress doc
-      // (further read/write rules will refine this)
-      allow get: if isAuthenticated(); 
-
-      allow list: if false; // Generally, don't allow listing all progress
-
-      // Students can read their own progress. Teachers can read progress for their assignments.
-      allow read: if isAuthenticated() &&
-                     ( (hasRole(request.auth.uid, 'student') && resource.data.studentId == request.auth.uid) ||
-                       (hasRole(request.auth.uid, 'teacher') && resource.data.teacherId == request.auth.uid) 
-                     );
-                     // Note: Assumes 'teacherId' (teacher who created assignment) is stored in studentProgress doc.
-
-      // Students can create their own progress doc.
-      allow create: if isAuthenticated() &&
-                       hasRole(request.auth.uid, 'student') &&
-                       request.resource.data.studentId == request.auth.uid &&
-                       request.resource.data.assignmentId == progressId && 
-                       request.resource.data.worksheetId != null &&
-                       request.resource.data.teacherId != null; // Ensure teacherId is set on create
-
-      // Students can update their own progress (not changing key IDs).
-      // Teachers can update progress for their assignments (e.g. grading).
-      allow update: if isAuthenticated() &&
-                       (
-                         (hasRole(request.auth.uid, 'student') && 
-                          resource.data.studentId == request.auth.uid &&
-                          request.resource.data.studentId == resource.data.studentId &&
-                          request.resource.data.worksheetId == resource.data.worksheetId &&
-                          request.resource.data.assignmentId == resource.data.assignmentId &&
-                          request.resource.data.teacherId == resource.data.teacherId // Student cannot change teacherId
-                         ) ||
-                         (hasRole(request.auth.uid, 'teacher') && 
-                          resource.data.teacherId == request.auth.uid && // Teacher owns this progress/assignment
-                          request.resource.data.studentId == resource.data.studentId && // Teacher cannot change student owner
-                          request.resource.data.assignmentId == resource.data.assignmentId &&
-                          request.resource.data.worksheetId == resource.data.worksheetId
-                           // Teacher can change status, score, teacherFeedback etc.
-                         )
-                       );
-      
-      allow delete: if false; // Or specific admin/teacher conditions
+    // Student Progress for New Worksheets:
+    // - Document ID is composite: {userId}_{worksheetId}
+    // - Students can only read and write their OWN progress documents.
+    match /studentNewWorksheetProgress/{compositeId} {
+      function getUserIdFromCompositeId() {
+        return compositeId.split('_')[0];
+      }
+      allow read, write: if request.auth != null && request.auth.uid == getUserIdFromCompositeId();
+      // Teachers might need to read student progress. This requires a more complex rule,
+      // potentially checking if the teacher owns the class the worksheet was assigned to,
+      // and if the student (from compositeId) is in that class.
+      // Example (simplified, assuming assignment implies access):
+      // allow read: if request.auth != null && (
+      //   (request.auth.uid == getUserIdFromCompositeId()) ||
+      //   (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher' &&
+      //    exists(/databases/$(database)/documents/assignments/{some_assignment_linking_teacher_student_worksheet})) // This part needs careful design
+      // );
     }
+
+    // You might have other collections like 'studentOldWorksheetProgress' or 'teacherProfiles'
+    // Add rules for them as needed.
+
   }
 }

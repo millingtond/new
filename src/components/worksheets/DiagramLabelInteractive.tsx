@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import type { Hotspot } from './worksheetTypes'; // Make sure Hotspot is defined in worksheetTypes
+import type { Hotspot } from './worksheetTypes'; 
 import KeywordTooltipWrapper from './KeywordTooltipWrapper';
 
 interface DiagramLabelInteractiveProps {
@@ -12,7 +12,7 @@ interface DiagramLabelInteractiveProps {
   hotspots?: Hotspot[];
   keywordsData?: Record<string, string>;
   isReadOnly?: boolean;
-  answers?: Record<string, Set<string>>; // Tracks revealed hotspots for a section: { [sectionId]: Set<hotspotId> }
+  answers?: Record<string, Set<string>>; 
   onAnswerChange?: (sectionId: string, hotspotId: string, isRevealed: boolean) => void;
   sectionId: string; 
 }
@@ -43,6 +43,7 @@ const DiagramLabelInteractive: React.FC<DiagramLabelInteractiveProps> = ({
   };
 
   const [revealedState, setRevealedState] = useState<Record<string, boolean>>(getInitialRevealedState());
+  const [imageError, setImageError] = useState<string | null>(null);
 
   useEffect(() => {
     setRevealedState(getInitialRevealedState());
@@ -64,32 +65,26 @@ const DiagramLabelInteractive: React.FC<DiagramLabelInteractiveProps> = ({
   };
 
   if (!diagramImageUrl) {
-    return <p className="text-red-500">Diagram image URL is missing.</p>;
+    return <p className="text-red-500 p-4 text-center">Diagram image URL is missing for this section.</p>;
+  }
+  if (imageError) {
+    return <p className="text-red-500 p-4 text-center">{imageError}</p>;
   }
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto my-6">
-      <div style={{ position: 'relative', width: '100%', paddingBottom: '75%' }}> {/* Aspect ratio container */}
+    <div className="relative w-full max-w-2xl mx-auto my-6 aspect-[4/3] bg-gray-100 rounded-md shadow-md overflow-hidden"> {/* Parent div for aspect ratio and relative positioning */}
         <Image
           src={diagramImageUrl}
           alt={diagramAltText}
-          layout="fill"
-          objectFit="contain"
-          className="rounded-md shadow-md bg-gray-100"
-          priority
+          fill // Use fill prop
+          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 80vw, 800px" // Example sizes
+          className="object-contain" // Use Tailwind for object-fit
+          priority // Consider adding if it's LCP
           onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.style.display = 'none';
-            const parent = target.parentElement?.parentElement; // Access the outer div
-            if (parent) {
-                 const errorMsg = document.createElement('p');
-                 errorMsg.textContent = `Failed to load image: ${diagramAltText}`;
-                 errorMsg.className = "text-red-500 text-center p-4";
-                 parent.appendChild(errorMsg);
-            }
+            console.error(`Error loading image: ${diagramImageUrl}`, e);
+            setImageError(`Failed to load diagram: ${diagramAltText}. Please check the image path or file.`);
           }}
         />
-      </div>
       {hotspots.map((hotspot) => {
         const isRevealed = revealedState[hotspot.id];
         const definition = hotspot.termKey ? keywordsData[hotspot.termKey.toLowerCase()] : undefined;
@@ -106,7 +101,7 @@ const DiagramLabelInteractive: React.FC<DiagramLabelInteractiveProps> = ({
               className={`p-1.5 rounded-full transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
                 ${isRevealed ? 'bg-indigo-500 text-white shadow-lg scale-110' : 'bg-white text-indigo-600 hover:bg-indigo-100 shadow-md border border-indigo-300'}
                 ${(isReadOnly && !hotspot.defaultRevealed) ? 'cursor-default opacity-75' : 'cursor-pointer'}`}
-              aria-label={`Reveal label for hotspot ${hotspot.id}`}
+              aria-label={`Reveal label for ${hotspot.label || hotspot.id}`}
               aria-expanded={isRevealed}
               disabled={isReadOnly && !hotspot.defaultRevealed}
             >

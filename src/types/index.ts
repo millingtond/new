@@ -22,7 +22,6 @@ export interface UserProfile {
   isAnonymous?: boolean;
   metadata?: FirebaseUser['metadata']; 
   providerData?: FirebaseUser['providerData'];
-  // Add other FirebaseUser fields if your store makes them available on userProfile
 }
 
 export interface ClassData {
@@ -39,11 +38,9 @@ export interface Assignment {
   worksheetTitle: string;
   classId: string;
   className: string;
-  teacherId: string;
+  teacherId: string; 
   assignedAt: Timestamp;
   dueDate?: Timestamp;
-  // Add teacherId field here if it's part of the assignment document itself
-  // teacherIdWhoAssigned?: string; 
 }
 
 export interface StudentProgressData {
@@ -51,7 +48,7 @@ export interface StudentProgressData {
   studentId: string;
   worksheetId: string;
   assignmentId: string; 
-  teacherId?: string; // Recommended: ID of the teacher who created the assignment
+  teacherId?: string; 
   lastUpdated: Timestamp;
   status: 'not-started' | 'in-progress' | 'submitted' | 'graded';
   questionnaireAnswers?: Record<string, Record<string, string>>; 

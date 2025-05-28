@@ -37,13 +37,12 @@ const StudentViewWorksheetPage = () => {
       }
       const progressDocRef = doc(db, 'studentProgress', assignmentId); 
       try {
-        // Ensure all essential fields are present before saving
         const dataToSave = {
             ...progressToSave,
-            studentId: userProfile.uid,
+            studentId: userProfile.uid, 
             worksheetId: worksheetId,
             assignmentId: assignmentId,
-            teacherId: progressToSave.teacherId || assignmentDetails?.teacherId || null, // Ensure teacherId
+            teacherId: progressToSave.teacherId || assignmentDetails?.teacherId || null,
             lastUpdated: Timestamp.now(),
             status: progressToSave.status || 'in-progress',
         };
@@ -53,7 +52,7 @@ const StudentViewWorksheetPage = () => {
         console.error('Error saving progress:', err);
       }
     }, 2000), 
-    [assignmentId, userProfile?.uid, worksheetId, assignmentDetails?.teacherId] // Added worksheetId and assignmentDetails.teacherId
+    [assignmentId, userProfile?.uid, worksheetId, assignmentDetails?.teacherId]
   );
 
   useEffect(() => {
@@ -98,78 +97,68 @@ const StudentViewWorksheetPage = () => {
           setError('Worksheet not found.');
           setWorksheet(null);
           setIsLoadingPage(false);
-          return; // Stop if worksheet not found
+          return; 
         }
 
+        let fetchedAssignmentDetails: Assignment | null = null;
         if (assignmentSnap.exists()) {
-          setAssignmentDetails({ id: assignmentSnap.id, ...assignmentSnap.data() } as Assignment);
+          fetchedAssignmentDetails = { id: assignmentSnap.id, ...assignmentSnap.data() } as Assignment;
+          setAssignmentDetails(fetchedAssignmentDetails);
         } else {
           console.warn(`Assignment details not found for assignmentId: ${assignmentId}`);
-          // Proceed without assignmentDetails if necessary, or set an error
-          setAssignmentDetails(null);
+          setAssignmentDetails(null); 
         }
+        
+        const progressDocRef = doc(db, 'studentProgress', assignmentId);
+        unsubscribeProgress = onSnapshot(progressDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const progressData = { id: docSnap.id, ...docSnap.data() } as StudentProgressData;
+            setStudentProgress(progressData);
+          } else {
+            const teacherIdForProgress = fetchedAssignmentDetails?.teacherId;
+            const initialProgress: StudentProgressData = {
+              studentId: userProfile.uid, 
+              worksheetId: worksheetId,
+              assignmentId: assignmentId,
+              teacherId: teacherIdForProgress, 
+              lastUpdated: Timestamp.now(),
+              status: 'in-progress',
+              questionnaireAnswers: {}, diagramLabelProgress: {}, fillInTheBlanksProgress: {},
+              quizProgress: {}, orderSequenceProgress: {}, matchingPairsProgress: {},
+            };
+            setStudentProgress(initialProgress);
+            debouncedSaveProgress(initialProgress); 
+          }
+          setIsLoadingPage(false); 
+        }, (err) => {
+          console.error('Error listening to progress:', err);
+          setError('Failed to load student progress.');
+          setIsLoadingPage(false);
+        });
 
       } catch (err) {
         console.error('Error fetching worksheet or assignment details:', err);
-        setError('Failed to load worksheet or assignment data.');
+        setError('Failed to load initial worksheet or assignment data.');
         setIsLoadingPage(false);
-        return; // Stop if critical data fails
       }
-
-      // Now listen for progress, only if worksheet and assignmentId are valid
-      const progressDocRef = doc(db, 'studentProgress', assignmentId);
-      unsubscribeProgress = onSnapshot(progressDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const progressData = { id: docSnap.id, ...docSnap.data() } as StudentProgressData;
-          setStudentProgress(progressData);
-        } else {
-          const currentAssignmentDetails = assignmentDetails || (assignmentId ? { teacherId: undefined } : { teacherId: undefined });
-          // Try to get teacherId from fetched assignmentDetails if available
-          const teacherIdForProgress = (currentAssignmentDetails as Assignment)?.teacherId;
-
-          const initialProgress: StudentProgressData = {
-            studentId: userProfile.uid, 
-            worksheetId: worksheetId,
-            assignmentId: assignmentId,
-            teacherId: teacherIdForProgress, // Get from fetched assignment
-            lastUpdated: Timestamp.now(),
-            status: 'in-progress',
-            questionnaireAnswers: {},
-            diagramLabelProgress: {},
-            fillInTheBlanksProgress: {},
-            quizProgress: {},
-            orderSequenceProgress: {},
-            matchingPairsProgress: {},
-          };
-          setStudentProgress(initialProgress);
-          debouncedSaveProgress(initialProgress); 
-        }
-        setIsLoadingPage(false); 
-      }, (err) => {
-        console.error('Error listening to progress:', err);
-        setError('Failed to load student progress.');
-        setIsLoadingPage(false);
-      });
     };
 
-    if (!authIsLoading && userProfile?.uid && worksheetId && assignmentId) {
-        fetchWorksheetAndAssignment();
-    }
+    fetchWorksheetAndAssignment();
 
     return () => {
       if (unsubscribeProgress) unsubscribeProgress();
       debouncedSaveProgress.cancel(); 
     };
-  }, [worksheetId, userProfile?.uid, assignmentId, debouncedSaveProgress, authIsLoading, assignmentDetails]); // Added assignmentDetails to dependencies
+  }, [worksheetId, userProfile?.uid, assignmentId, debouncedSaveProgress, authIsLoading]);
 
-  // Wrapped all handlers in useCallback
+
   const handleQuestionnaireAnswerChange = useCallback((sectionId: string, questionId: string, answer: string) => {
     setStudentProgress(prev => {
       if (!prev) return null;
       const updatedProgress = { 
         ...prev, 
         questionnaireAnswers: {
-          ...(prev.questionnaireAnswers || {}), // Ensure questionnaireAnswers itself exists
+          ...(prev.questionnaireAnswers || {}),
           [sectionId]: {
             ...(prev.questionnaireAnswers?.[sectionId] || {}),
             [questionId]: answer,
@@ -191,7 +180,7 @@ const StudentViewWorksheetPage = () => {
       const updatedProgress = { 
         ...prev, 
         diagramLabelProgress: {
-          ...(prev.diagramLabelProgress || {}), // Ensure diagramLabelProgress itself exists
+          ...(prev.diagramLabelProgress || {}),
           [sectionId]: Array.from(currentRevealedForSection),
         }
       };
@@ -206,7 +195,7 @@ const StudentViewWorksheetPage = () => {
       const updatedProgress = { 
         ...prev, 
         fillInTheBlanksProgress: {
-          ...(prev.fillInTheBlanksProgress || {}), // Ensure fillInTheBlanksProgress itself exists
+          ...(prev.fillInTheBlanksProgress || {}),
           [sectionId]: {
             ...(prev.fillInTheBlanksProgress?.[sectionId] || {}),
             [blankId]: value,
@@ -224,7 +213,7 @@ const StudentViewWorksheetPage = () => {
       const updatedProgress = { 
         ...prev, 
         quizProgress: {
-          ...(prev.quizProgress || {}), // Ensure quizProgress itself exists
+          ...(prev.quizProgress || {}),
           [sectionId]: {
             ...(prev.quizProgress?.[sectionId] || {}),
             [questionId]: selectedOptionId,
@@ -242,7 +231,7 @@ const StudentViewWorksheetPage = () => {
       const updatedProgress = { 
         ...prev, 
         orderSequenceProgress: {
-          ...(prev.orderSequenceProgress || {}), // Ensure orderSequenceProgress itself exists
+          ...(prev.orderSequenceProgress || {}),
           [sectionId]: newOrderIds,
         } 
       };
@@ -257,7 +246,7 @@ const StudentViewWorksheetPage = () => {
       const updatedProgress = { 
         ...prev, 
         matchingPairsProgress: {
-          ...(prev.matchingPairsProgress || {}), // Ensure matchingPairsProgress itself exists
+          ...(prev.matchingPairsProgress || {}),
           [sectionId]: newPairs,
         } 
       };
