@@ -11,8 +11,8 @@ export interface BaseSection {
   title: string;
   type: SectionType;
   isActivity: boolean;
-  isCompleted?: boolean;
-  isAttempted?: boolean;
+  isCompleted?: boolean; // For non-activity sections, user marks as read
+  isAttempted?: boolean; // For activity sections, if any part has been interacted with
 }
 
 export interface StaticTextSection extends BaseSection {
@@ -25,8 +25,8 @@ export interface StarterQuestion {
   id:string;
   questionText: string;
   questionType: 'shortAnswer' | 'multipleChoice' | 'trueFalse';
-  options?: string[];
-  placeholder?: string;
+  options?: string[]; // For multipleChoice
+  placeholder?: string; // For shortAnswer
   minLengthForAttempt?: number;
 }
 export interface StarterActivitySection extends BaseSection {
@@ -38,61 +38,68 @@ export interface StarterActivitySection extends BaseSection {
 
 export interface LessonOutcomesSection extends BaseSection {
   type: 'LessonOutcomes';
-  outcomes: string[];
+  outcomes: string[]; // Array of outcome strings
   isActivity: false;
 }
 
 export interface DraggableLabelItem {
-  id: string;
-  text: string;
-  dataLabel: string; // Corresponds to data-label in original HTML
+  id: string; // Unique ID for the draggable label, e.g., "label-pc"
+  text: string; // Text displayed on the label, e.g., "PC"
+  dataLabel: string; // The underlying correct identifier, e.g., "pc" (matches a dataCorrect value in DropZoneConfig)
 }
 
 export interface DropZoneConfig {
-  id: string; // e.g., "drop-cu-title"
-  dataCorrect: string; // The dataLabel of the correct DraggableLabelItem
-  hint?: string; // Optional hint text for the zone
-  // For styling/positioning, these can be used if not handled by pure CSS for these specific IDs
-  style?: React.CSSProperties;
-  className?: string; // To apply specific classes for positioning from style.css
-  isRegisterZone?: boolean;
-  dataRegister?: string;
+  id: string; // Unique ID for the drop zone, e.g., "drop-zone-registers"
+  title?: string; // Optional title displayed on the drop zone itself (e.g., "Registers")
+  correctLabels: string[]; // Array of `dataLabel`s from DraggableLabelItem that are correct for this zone
+  hint?: string; // Hint text to display on hover
+  allowMultiple: boolean; // Whether this zone can accept multiple draggable items
+  maxItems?: number; // Optional: if allowMultiple is true, max number of items
+  // Styling and positioning should ideally be handled by CSS targeting the `id` or dedicated classes.
+  // However, inline styles can be an option for very specific dynamic positioning if necessary.
+  style?: React.CSSProperties; 
+  className?: string; // Additional CSS classes for styling the drop zone
+  placeholderText?: string; // Text to show when the zone is empty (e.g., "Drop registers here")
 }
 
 export interface DiagramLabelDragDropSection extends BaseSection {
   type: 'DiagramLabelDragDrop';
-  introText: string;
-  diagramImageUrl?: string; // Optional: if there's a background image for the diagram
-  dropZones: DropZoneConfig[];
-  labels: DraggableLabelItem[];
+  introText: string; // HTML content for introduction
+  diagramImageUrl?: string; // Optional URL for a background diagram image
+  dropZones: DropZoneConfig[]; // Configuration for each droppable area
+  labels: DraggableLabelItem[]; // All available draggable labels
   isActivity: true;
 }
+// Answer structure for DiagramLabelDragDrop in student progress:
+// progress.sectionStates[section.id].answers will be:
+// { [dropZoneId: string]: { placedLabelIds: string[], isCorrect?: boolean } }
+// where placedLabelIds is an array of DraggableLabelItem.id
 
 export interface MatchItem {
-  id: string; // Unique ID for this item, e.g., "cu"
-  text: string; // Display text, e.g., "Control Unit (CU)"
+  id: string; 
+  text: string; 
 }
 
 export interface MatchDescriptionItem {
-  id: string; // Unique ID for this description, e.g., "desc-cu"
-  text: string; // Display text of the description
+  id: string; 
+  text: string; 
   matchesTo: string; // The id of the MatchItem it correctly matches
 }
 
 export interface MatchingTaskSection extends BaseSection {
   type: 'MatchingTask';
   introText: string;
-  matchItemsTitle: string; // e.g., "Component/Register"
-  descriptionItemsTitle: string; // e.g., "Description"
+  matchItemsTitle: string; 
+  descriptionItemsTitle: string; 
   items: MatchItem[];
   descriptions: MatchDescriptionItem[];
   isActivity: true;
 }
 
 export interface RegisterInfo {
-  id: string; // e.g., "pc"
-  name: string; // e.g., "PC"
-  displayName: string; // e.g., "Program Counter (PC)"
+  id: string; 
+  name: string; 
+  displayName: string; 
   description: string;
 }
 
@@ -100,25 +107,27 @@ export interface RegisterExplorerSection extends BaseSection {
   type: 'RegisterExplorer';
   introText: string;
   registers: RegisterInfo[];
-  isActivity: true; // It's an interactive exploration
+  isActivity: true; 
 }
 
 export interface BusSimulationSection extends BaseSection {
   type: 'BusSimulation';
   introText: string;
-  isActivity: true;
+  isActivity: true; // Or false if it's purely demonstrative with no student input to save
+  // Potentially add iframeUrl or other config if embedding an external simulation
+  iframeUrl?: string;
 }
 
 export interface ScenarioOption {
   text: string;
-  value: string; // e.g., "PC" (the correct acronym/identifier)
+  value: string; 
 }
 
 export interface Scenario {
-  id: string; // Unique ID for the scenario, e.g., "scenario1"
-  questionText: string; // The scenario description (can be HTML)
+  id: string; 
+  questionText: string; 
   options: ScenarioOption[];
-  correctAnswerValue: string; // The 'value' of the correct ScenarioOption
+  correctAnswerValue: string; 
 }
 
 export interface ScenarioQuestionSection extends BaseSection {
@@ -129,12 +138,12 @@ export interface ScenarioQuestionSection extends BaseSection {
 }
 
 export interface FillBlankSentence {
-  id: string; // e.g., "fill-1"
-  leadingText?: string; // Text before the blank
-  trailingText?: string; // Text after the blank
-  placeholder: string; // Placeholder for the blank, e.g., "Component"
-  correctAnswers: string[]; // Array of acceptable answers (case-insensitive)
-  fullSentenceStructure?: string; // Optional: "1. The {blank} decodes instructions..."
+  id: string; 
+  leadingText?: string; 
+  trailingText?: string; 
+  placeholder: string; 
+  correctAnswers: string[]; 
+  fullSentenceStructure?: string; 
 }
 
 export interface FillTheBlanksSection extends BaseSection {
@@ -145,10 +154,10 @@ export interface FillTheBlanksSection extends BaseSection {
 }
 
 export interface QuizQuestion {
-  id: string; // e.g., "q1", "q2"
+  id: string; 
   questionText: string;
   options: string[];
-  correctAnswer: string; // The text of the correct option
+  correctAnswer: string; 
   feedbackCorrect: string;
   feedbackIncorrect: string;
 }
@@ -160,13 +169,13 @@ export interface MultipleChoiceQuizSection extends BaseSection {
 }
 
 export interface ExamQuestion {
-  id: string; // e.g., "exam-q-pc"
-  questionText: string; // HTML content for the question
-  marks: number; // Max marks for the question
+  id: string; 
+  questionText: string; 
+  marks: number; 
   answerPlaceholder?: string;
-  markScheme: string; // HTML content for the mark scheme
-  charsPerMarkForAttempt?: number; // e.g., 20 chars per mark
-  minLengthForAttempt?: number; // Alternative: specify absolute minimum length
+  markScheme: string; 
+  charsPerMarkForAttempt?: number; 
+  minLengthForAttempt?: number; 
 }
 
 export interface ExamQuestionsSection extends BaseSection {
@@ -177,29 +186,30 @@ export interface ExamQuestionsSection extends BaseSection {
 }
 
 export interface VideoEntry {
-  id: string; // Unique ID for the video entry, e.g., "video-fde"
-  title: string; // e.g., "1.1 The purpose of the CPU - The fetch-execute cycle"
-  embedUrl: string; // The YouTube embed URL
-  notesPlaceholder?: string; // e.g., "Optional: Add any additional notes from this video..."
+  id: string; 
+  title: string; 
+  embedUrl: string; 
+  notesPlaceholder?: string; 
 }
 
 export interface VideoPlaceholderSection extends BaseSection {
   type: 'VideoPlaceholder';
-  introText?: string; // e.g., "Watch these videos to reinforce..."
+  introText?: string; 
   videos: VideoEntry[];
-  isActivity: false; // Primarily for viewing, notes are optional self-study
+  isActivity: false; // Viewing is passive, notes are optional self-study.
+                     // If notes become a graded/tracked activity, set to true.
 }
 
-export interface KeyTakeawaysSection extends BaseSection { // Using StaticTextSection structure by using 'content'
+export interface KeyTakeawaysSection extends BaseSection { 
   type: 'KeyTakeaways';
   content: string; // HTML content for RichTextSectionDisplay
   isActivity: false;
 }
 
 export interface WhatsNextLink {
-  text: string; // Can be HTML with <keyword>
-  url?: string; // For internal app paths or external links
-  specReference?: string; // e.g., "Spec 1.1.2"
+  text: string; 
+  url?: string; 
+  specReference?: string; 
 }
 
 export interface WhatsNextSection extends BaseSection {
@@ -223,18 +233,19 @@ export interface ExtensionActivitiesSection extends BaseSection {
   isActivity: true;
 }
 
-// Represents a student's answers/progress for a new worksheet
 export interface NewWorksheetStudentProgress {
   worksheetId: string;
   studentId: string;
   currentSectionIndex: number;
-  sectionStates: Record<string, {
-    isCompleted: boolean;
-    isAttempted?: boolean;
-    answers?: Record<string, TaskAttempt>; // Keyed by question/item.id within a section
+  sectionStates: Record<string, { // Keyed by section.id
+    isCompleted: boolean; // For non-activities: marked as read. For activities: all parts are correct/done.
+    isAttempted?: boolean; // True if any part of an activity section has been interacted with.
+    answers?: Record<string, TaskAttempt | any>; // Keyed by question/item.id within a section. 'any' for complex answers.
+                                              // For DiagramLabelDragDrop, this would be:
+                                              // { [dropZoneId: string]: { placedLabelIds: string[], isCorrect?: boolean } }
   }>;
   overallStatus: 'not-started' | 'in-progress' | 'completed';
-  lastUpdated: Date;
+  lastUpdated: Date; // Firestore Timestamp will be converted to Date on load
 }
 
 
@@ -251,7 +262,7 @@ export type WorksheetSection =
   | MultipleChoiceQuizSection
   | ExamQuestionsSection
   | VideoPlaceholderSection
-  | KeyTakeawaysSection // Will be treated as StaticTextSection in data
+  | KeyTakeawaysSection 
   | WhatsNextSection
   | ExtensionActivitiesSection;
 
@@ -273,10 +284,10 @@ export type SectionType =
   | 'ExtensionActivities';
 
 export interface NewWorksheet {
-  id: string;
+  id: string; // e.g., j277-1-1-cpu-architecture
   title: string;
-  course: string;
-  unit: string;
+  course: string; // e.g., GCSE Computer Science (J277)
+  unit: string; // e.g., Topic 1.1.1: CPU Components & Architecture
   sections: WorksheetSection[];
-  keywordsData?: Record<string, { definition: string; link?: string }>;
+  keywordsData?: Record<string, { definition: string; link?: string }>; // Optional global keywords for the worksheet
 }

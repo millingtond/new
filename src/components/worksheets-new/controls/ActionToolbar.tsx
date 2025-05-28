@@ -12,8 +12,7 @@ const Button: React.FC<ButtonProps> = ({ children, className, variant = 'primary
     ghost: "bg-transparent text-gray-600 hover:bg-gray-100 focus:ring-gray-500",
     danger: "bg-red-500 text-white hover:bg-red-600 focus:ring-red-400",
   };
-  // @ts-ignore
-  return <button className={`${baseStyle} ${variants[variant]} ${className || ''}`} {...props}>{children}</button>;
+  return <button className={`${baseStyle} ${variants[variant]} ${className || ''}`} {...props}>{children}</button>; // The variant type is not strictly enforced by the ButtonHTMLAttributes
 };
 
 interface ActionToolbarProps {

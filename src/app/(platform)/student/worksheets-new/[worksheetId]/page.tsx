@@ -1,11 +1,11 @@
 // src/app/(platform)/student/worksheets-new/[worksheetId]/page.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import NewWorksheetPlayer from '@/components/worksheets-new/NewWorksheetPlayer';
 import { NewWorksheet, NewWorksheetStudentProgress } from '@/types/worksheetNew';
-import { cpuArchitectureLesson } from '@/data/sampleCpuLessonData';
+import { cpuArchitectureLesson } from '@/data/sampleCpuLessonData'; // Assuming this is your lesson data
 import { useAuthStore } from '@/store/authStore';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/config/firebase';
@@ -14,94 +14,146 @@ const NewWorksheetPage = () => {
   const params = useParams();
   const router = useRouter();
   const worksheetId = params.worksheetId as string;
+
   const [lessonData, setLessonData] = useState<NewWorksheet | null>(null);
   const [initialProgress, setInitialProgress] = useState<NewWorksheetStudentProgress | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
-  const { userProfile } = useAuthStore();
+  const [error, setError] = useState<string | null>(null);
+  const { userProfile, isLoading: isAuthLoading } = useAuthStore(); // Get auth loading state
+
+  // Memoize fetchLessonAndProgress to prevent re-creation on every render
+  const fetchLessonAndProgress = useCallback(async (studentUid: string, currentWorksheetId: string) => {
+    setIsLoading(true);
+    setError(null);
+    console.log(`Fetching lesson and progress for worksheet: ${currentWorksheetId}, user: ${studentUid}`);
+
+    try {
+      // In a real scenario, you'd fetch lessonData from Firestore or an API
+      // For now, we're hardcoding it to cpuArchitectureLesson if IDs match
+      if (currentWorksheetId === cpuArchitectureLesson.id) {
+        setLessonData(cpuArchitectureLesson);
+      } else {
+        console.error("Lesson not found for ID:", currentWorksheetId);
+        setError(`Lesson data could not be loaded for ID '${currentWorksheetId}'.`);
+        setLessonData(null);
+        setIsLoading(false);
+        return;
+      }
+
+      const progressDocRef = doc(db, "studentNewWorksheetProgress", `${studentUid}_${currentWorksheetId}`);
+      const progressDocSnap = await getDoc(progressDocRef);
+
+      if (progressDocSnap.exists()) {
+        const data = progressDocSnap.data();
+        const loadedProgress = {
+          ...data,
+          lastUpdated: data.lastUpdated?.toDate ? data.lastUpdated.toDate() : new Date(),
+          sectionStates: data.sectionStates || {}, // Ensure sectionStates exists
+        } as NewWorksheetStudentProgress;
+
+        // Ensure answers object exists for each section in the loaded progress
+        // This helps prevent issues if progress was saved with missing answer structures
+        cpuArchitectureLesson.sections.forEach(sec => {
+          if (!loadedProgress.sectionStates[sec.id]) {
+            loadedProgress.sectionStates[sec.id] = { isCompleted: false, isAttempted: false, answers: {} };
+          } else if (!loadedProgress.sectionStates[sec.id].answers) {
+            loadedProgress.sectionStates[sec.id].answers = {};
+          }
+        });
+        setInitialProgress(loadedProgress);
+        console.log("Loaded initial progress:", loadedProgress);
+      } else {
+        setInitialProgress(undefined); // No existing progress, NewWorksheetPlayer will initialize
+        console.log("No existing progress found. Player will initialize.");
+      }
+    } catch (err) {
+      console.error("Error fetching lesson or progress:", err);
+      setError("An error occurred while loading the lesson. Please try again.");
+      setLessonData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []); // No dependencies needed for useCallback if all inputs are parameters
 
   useEffect(() => {
-    if (!worksheetId || !userProfile?.uid) {
-      // Wait for userProfile to be loaded by AuthProvider, or if explicitly null and not loading, redirect.
-      // AuthProvider should handle the primary redirect if user is not logged in at all.
-      // This check is more for cases where worksheetId is missing or user becomes null after initial auth check.
-      if (!isLoading && !userProfile?.uid) {
-          console.log("User not authenticated, redirecting to login.");
-          router.push('/login');
-      }
-      // If worksheetId is missing but user is there, we might still be loading or it's an invalid path.
-      // The later checks for lessonData will handle invalid worksheetId.
+    // Wait for authentication to resolve and worksheetId to be available
+    if (isAuthLoading || !worksheetId) {
+      console.log("Auth loading or worksheetId missing, waiting...");
+      setIsLoading(true); // Explicitly set loading if auth is still processing
       return;
     }
 
-    const fetchLessonAndProgress = async () => {
-      setIsLoading(true);
-      try {
-        if (worksheetId === cpuArchitectureLesson.id) {
-          setLessonData(cpuArchitectureLesson);
-        } else {
-          console.error("Lesson not found for ID:", worksheetId);
-          setLessonData(null);
-        }
+    if (!userProfile?.uid) {
+      // If auth is done and still no user, redirect. AuthProvider might also do this.
+      console.log("User not authenticated after auth check, redirecting to login.");
+      router.push('/login');
+      return;
+    }
+    
+    // User is authenticated and worksheetId is present, fetch data
+    fetchLessonAndProgress(userProfile.uid, worksheetId);
 
-        const progressDocRef = doc(db, "studentNewWorksheetProgress", `${userProfile.uid}_${worksheetId}`);
-        const progressDocSnap = await getDoc(progressDocRef);
-        if (progressDocSnap.exists()) {
-          const data = progressDocSnap.data();
-          const progressData = {
-            ...data,
-            lastUpdated: data.lastUpdated?.toDate ? data.lastUpdated.toDate() : new Date(),
-            // Ensure sectionStates and answers are properly initialized if they are missing from Firestore
-            sectionStates: data.sectionStates || {},
-          } as NewWorksheetStudentProgress;
-           // Deep merge or ensure answers structure exists for each section
-           cpuArchitectureLesson.sections.forEach(sec => {
-             if (!progressData.sectionStates[sec.id]) {
-               progressData.sectionStates[sec.id] = { isCompleted: false, isAttempted: false, answers: {} };
-             } else if (!progressData.sectionStates[sec.id].answers) {
-                progressData.sectionStates[sec.id].answers = {};
-             }
-           });
-          setInitialProgress(progressData);
-        } else {
-          setInitialProgress(undefined); // No existing progress, NewWorksheetPlayer will initialize
-        }
-      } catch (error) {
-        console.error("Error fetching lesson or progress:", error);
-        setLessonData(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  }, [worksheetId, userProfile?.uid, isAuthLoading, router, fetchLessonAndProgress]);
 
-    fetchLessonAndProgress();
-  }, [worksheetId, userProfile?.uid, router, isLoading]);
 
   const handleSaveProgress = async (progress: NewWorksheetStudentProgress) => {
-    if (!userProfile?.uid || !lessonData) return;
+    if (!userProfile?.uid || !lessonData) {
+      console.warn("Cannot save progress: User or lesson data missing.");
+      return;
+    }
     try {
       const progressDocRef = doc(db, "studentNewWorksheetProgress", `${userProfile.uid}_${lessonData.id}`);
       const dataToSave = {
         ...progress,
-        studentId: userProfile.uid,
-        worksheetId: lessonData.id,
+        studentId: userProfile.uid, // Ensure studentId is correctly set
+        worksheetId: lessonData.id, // Ensure worksheetId is correctly set
         lastUpdated: serverTimestamp()
       };
       await setDoc(progressDocRef, dataToSave, { merge: true });
-    } catch (error) {
-      console.error("Failed to save progress:", error);
+      console.log("Progress saved successfully for worksheet:", lessonData.id);
+    } catch (err) {
+      console.error("Failed to save progress:", err);
+      // Optionally, notify the user of save failure
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isAuthLoading) {
     return <div className="flex justify-center items-center h-screen"><p className="text-xl animate-pulse">Loading Lesson...</p></div>;
   }
 
-  if (!lessonData) {
-    return <div className="flex flex-col justify-center items-center h-screen"><p className="text-xl text-red-500">Error: Lesson data could not be loaded for ID '{worksheetId}'.</p><button onClick={() => router.push('/student/assignments')} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Back to Assignments</button></div>;
+  if (error) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen p-4 text-center">
+        <p className="text-xl text-red-500 mb-4">{error}</p>
+        <button 
+          onClick={() => router.push('/student/assignments')} 
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Back to Assignments
+        </button>
+      </div>
+    );
   }
   
+  if (!lessonData) {
+    // This case should ideally be covered by the error state if fetching failed
+    return (
+      <div className="flex flex-col justify-center items-center h-screen p-4 text-center">
+        <p className="text-xl text-red-500">Lesson data is not available.</p>
+        <button 
+          onClick={() => router.push('/student/assignments')} 
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Back to Assignments
+        </button>
+      </div>
+    );
+  }
+  
+  // Ensure userProfile.uid is definitely available before rendering NewWorksheetPlayer
+  // This check is somewhat redundant if the useEffect handles redirection, but good for safety
   if (!userProfile?.uid) {
-      return <div className="flex justify-center items-center h-screen"><p className="text-xl text-red-500">User not authenticated. Redirecting...</p></div>;
+      return <div className="flex justify-center items-center h-screen"><p className="text-xl text-red-500">User authentication issue. Redirecting...</p></div>;
   }
 
   return (
