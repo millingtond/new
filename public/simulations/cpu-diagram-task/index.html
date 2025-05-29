@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCSE CS Lesson: Inside the CPU & Von Neumann Architecture</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    
+<link rel="stylesheet" href="css/style.css">
+</head>
+<nav class="bg-gray-800 text-white p-3 no-print sticky top-0 z-50 shadow-md mb-6">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+        <a href="home.html" class="text-xl font-bold hover:text-gray-300 transition-colors">MGS CS Hub</a>
+        <ul class="flex space-x-3 lg:space-x-4">
+        </ul>
+        <ul class="flex flex-wrap space-x-2 sm:space-x-3 lg:space-x-4 text-sm sm:text-base">
+            <li><a href="#" class="hover:text-gray-300 transition-colors">Year 7</a></li>
+            <li><a href="#" class="hover:text-gray-300 transition-colors">Year 8</a></li>
+            <li><a href="#" class="hover:text-gray-300 transition-colors">Year 9</a></li>
+            <li><a href="gcse.html" class="hover:text-gray-300 transition-colors">GCSE</a></li>
+            <li><a href="#" class="hover:text-gray-300 transition-colors">A Level</a></li>
+            <li><a href="#" class="hover:text-gray-300 transition-colors">Competitions</a></li>
+            <li><a href="#" class="hover:text-gray-300 transition-colors">CS News</a></li>
+            <li><a href="#" class="hover:text-gray-300 transition-colors">Extracurricular</a></li>
+        </ul>
+    </div>
+</nav>
+
+
+
+
+
+    <div class="max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-lg shadow-xl">
+
+        <a href="mgsgcse11.html" class="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6 group">
+             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left w-5 h-5 mr-2 transition-transform duration-200 group-hover:-translate-x-1"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+            Back to Systems Architecture
+        </a>
+
+        <header class="mb-8 border-b pb-4">
+            <h1 class="text-3xl md:text-4xl font-bold text-indigo-700 mb-2">Inside the CPU: Components & Von Neumann Architecture</h1>
+            <p class="text-lg text-gray-600">OCR GCSE Computer Science (J277) - Topic 1.1.1: CPU Components & Architecture</p>
+        </header>
+
+        <section id="starter-recap" class="mb-10">
+            <h2 class="text-2xl font-semibold text-indigo-600 mb-4"><i class="fas fa-lightbulb mr-2 text-yellow-500"></i> Starter Activity (5 mins)</h2>
+            <div class="bg-yellow-50 p-5 rounded-lg border border-yellow-200 space-y-4">
+                <p class="font-semibold text-yellow-800">Initial Thoughts:</p>
+                <p>Before we dive into the CPU's internal parts, what do you *think* these components might do? Don't worry if you're unsure – we'll cover them in this lesson! Just jot down any initial ideas.</p>
+                <div class="space-y-3">
+                    <div class="starter-question">
+                        <label for="starter-cu" class="block text-sm font-medium text-yellow-700"><strong>Control Unit (CU):</strong> What might this control?</label>
+                        <input type="text" id="starter-cu" name="starter-cu" class="mt-1 block w-full p-2 border border-yellow-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white" placeholder="Your initial thoughts...">
+                    </div>
+                    <div class="starter-question">
+                        <label for="starter-alu" class="block text-sm font-medium text-yellow-700"><strong>ALU (Arithmetic Logic Unit):</strong> What kind of operations might this perform?</label>
+                        <input type="text" id="starter-alu" name="starter-alu" class="mt-1 block w-full p-2 border border-yellow-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white" placeholder="Your initial thoughts...">
+                    </div>
+                    <div class="starter-question">
+                        <label for="starter-registers" class="block text-sm font-medium text-yellow-700"><strong>Registers (e.g., PC, MAR, MDR):</strong> What could these small memory locations be used for?</label>
+                        <input type="text" id="starter-registers" name="starter-registers" class="mt-1 block w-full p-2 border border-yellow-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white" placeholder="Your initial thoughts...">
+                    </div>
+                    <div class="starter-question">
+                        <label for="starter-buses" class="block text-sm font-medium text-yellow-700"><strong>Buses (Address, Data, Control):</strong> What might these pathways transfer?</label>
+                        <input type="text" id="starter-buses" name="starter-buses" class="mt-1 block w-full p-2 border border-yellow-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white" placeholder="Your initial thoughts...">
+                    </div>
+                    <div class="starter-question">
+                        <label for="starter-cache" class="block text-sm font-medium text-yellow-700"><strong>Cache:</strong> Why might the CPU have a small amount of very fast memory built into it?</label>
+                        <input type="text" id="starter-cache" name="starter-cache" class="mt-1 block w-full p-2 border border-yellow-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white" placeholder="Your initial thoughts...">
+                    </div>
+                </div>
+                <!-- Removed reveal button and answers section -->
+            </div>
+        </section>
+
+        <section id="lesson-outcomes" class="mb-10">
+            <h2 class="text-2xl font-semibold text-indigo-600 mb-4"><i class="fas fa-bullseye mr-2 text-green-500"></i> Lesson Outcomes</h2>
+            <div class="bg-green-50 p-5 rounded-lg border border-green-200">
+                <p class="font-semibold text-green-800 mb-3">By the end of this lesson, you should be able to:</p>
+                <ul class="list-disc list-inside space-y-2 text-green-700 pl-4">
+                    <li>Describe the main components of the Von Neumann architecture (CPU, Memory, Buses).</li>
+                    <li>Identify the key components within the CPU: Control Unit (CU), Arithmetic Logic Unit (ALU), Cache, and Registers.</li>
+                    <li>Explain the specific function of the CU and the ALU.</li>
+                    <li>Name and describe the purpose of key CPU registers: PC, MAR, MDR, ACC, CIR.</li>
+                    <li>Explain the purpose of the Address Bus, Data Bus, and Control Bus in transferring data and signals.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="mb-10">
+             <div class="flex justify-between items-center mb-4">
+                 <h2 class="text-2xl font-semibold text-indigo-600">Introduction</h2>
+                 <label class="flex items-center text-sm text-gray-500 cursor-pointer hover:text-gray-700">
+                     <input type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mr-1.5 cursor-pointer">
+                     Read
+                 </label>
+             </div>
+             <div class="bg-indigo-50 p-5 rounded-lg border border-indigo-200 space-y-3">
+                <p>In the previous lesson, we learned that the <span class="keyword">CPU<span class="tooltip">Central Processing Unit: This component repeatedly fetches, decodes and executes instructions. Often abbreviated to CPU.</span></span> is the 'brain' of the computer and follows the <span class="keyword">Fetch-Decode-Execute Cycle<span class="tooltip">Also known as the instruction cycle, the complete process of retrieving an instruction from store, decoding it and carrying it out.</span></span>.</p>
+                <p>This lesson dives deeper into how the CPU is organised based on the <strong class="font-semibold text-indigo-800">Von Neumann Architecture</strong>, and explores the key components inside the CPU, including special memory locations called <span class="keyword">Registers<span class="tooltip">The collection of tiny areas of extremely fast memory located *inside* the CPU, each with a specific purpose, where data or control information is stored temporarily. Examples: MAR, MDR, PC, Accumulator.</span></span>, that make the FDE cycle work.</p>
+                <p>Complete the tasks below to build your understanding. Hover over <span class="keyword">keywords<span class="tooltip">This is an example tooltip!</span></span> for quick definitions!</p>
+            </div>
+        </section>
+
+        <section id="task1-dragdrop" class="task-container mb-10">
+            <h3 class="text-xl task-title text-indigo-700"><i class="fas fa-arrows-up-down-left-right mr-2"></i>Task 1: Label the CPU Components</h3>
+            <p class="mb-4 text-gray-700">Drag the labels from the bank below onto the correct component boxes in the diagram. Hover over the <i class="fas fa-circle-question text-gray-500"></i> icons for hints!</p>
+
+            <div class="diagram-layout-container">
+                <div id="diagram-registers" class="diagram-component-box">
+                    <div class="drop-zone-wrapper">
+                        <div id="drop-registers-title" class="drop-zone" data-correct="registers" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                        <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">The main title for this group of fast, internal CPU memory locations.</span></span>
+                    </div>
+                    <div class="drop-zone-wrapper">
+                        <div id="drop-pc" class="drop-zone register-zone" data-register="pc" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                         <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Holds the address of the NEXT instruction.</span></span>
+                    </div>
+                     <div class="drop-zone-wrapper">
+                        <div id="drop-mar" class="drop-zone register-zone" data-register="mar" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                         <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Holds the memory ADDRESS to read/write.</span></span>
+                    </div>
+                     <div class="drop-zone-wrapper">
+                        <div id="drop-mdr" class="drop-zone register-zone" data-register="mdr" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                        <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Holds the DATA coming from or going to memory.</span></span>
+                    </div>
+                     <div class="drop-zone-wrapper">
+                        <div id="drop-cir" class="drop-zone register-zone" data-register="cir" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                        <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Holds the CURRENT instruction being processed.</span></span>
+                    </div>
+                </div>
+                <div id="diagram-memory" class="diagram-component-box">
+                     <div class="drop-zone-wrapper">
+                        <div id="drop-memory-title" class="drop-zone" data-correct="memory" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                        <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Stores instructions and data (RAM).</span></span>
+                    </div>
+                     <div class="text-xs p-1 text-gray-700 text-left mt-1">
+                         <p>1. LOAD 5</p><p>2. ADD 6</p><p>3. STO 7</p>
+                         <p>...</p><p>5. 12</p><p>6. 8</p>
+                     </div>
+                </div>
+                <div id="diagram-alu" class="diagram-component-box">
+                    <div class="drop-zone-wrapper">
+                        <div id="drop-alu-title" class="drop-zone" data-correct="alu" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                        <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Performs calculations and logic.</span></span>
+                    </div>
+                </div>
+                 <div id="diagram-cu" class="diagram-component-box">
+                     <div class="drop-zone-wrapper">
+                        <div id="drop-cu-title" class="drop-zone" data-correct="cu" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                        <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Controls the FDE cycle and data flow.</span></span>
+                    </div>
+                 </div>
+                 <div id="diagram-acc" class="diagram-component-box">
+                     <div class="drop-zone-wrapper">
+                        <div id="drop-acc-title" class="drop-zone" data-correct="acc" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                        <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Temporarily stores calculation results.</span></span>
+                    </div>
+                 </div>
+            </div>
+
+            <div id="label-bank" class="label-bank" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)">
+                <span id="label-item-reg" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="registers">Registers</span>
+                <span id="label-item-pc" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="pc">PC</span>
+                <span id="label-item-mar" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="mar">MAR</span>
+                <span id="label-item-mdr" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="mdr">MDR</span>
+                <span id="label-item-cir" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="cir">CIR</span>
+                <span id="label-item-acc" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="acc">Accumulator</span>
+                <span id="label-item-alu" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="alu">ALU</span>
+                <span id="label-item-cu" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="cu">Control Unit</span>
+                <span id="label-item-mem" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="memory">Memory</span>
+            </div>
+
+            <button class="check-button" onclick="checkDragDropLabels()">Check Diagram Labels</button>
+            <button class="reset-button" onclick="resetDragDropTask1()">Reset Task 1</button>
+            <div id="dragdrop-feedback" class="feedback-area"></div>
+        </section>
+
+        <section id="task2-matching" class="task-container mb-10">
+            <h3 class="text-xl task-title text-indigo-700"><i class="fas fa-puzzle-piece mr-2"></i>Task 2: Match the Components & Registers</h3>
+            <p class="mb-4 text-gray-700">Match the CPU component or register on the left with its correct description on the right. Click one item from each list to create a pair.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="font-semibold mb-2 text-center text-gray-600">Component/Register</h4>
+                    <ul id="matching-names" class="matching-list">
+                        <li class="matching-item" data-match="cu">Control Unit (CU)</li>
+                        <li class="matching-item" data-match="alu">ALU</li>
+                        <li class="matching-item" data-match="cache">Cache</li>
+                        <li class="matching-item" data-match="registers">Registers</li>
+                        <li class="matching-item" data-match="pc">Program Counter (PC)</li>
+                        <li class="matching-item" data-match="mar">MAR</li>
+                        <li class="matching-item" data-match="mdr">MDR</li>
+                        <li class="matching-item" data-match="acc">Accumulator</li>
+                    </ul>
+                </div>
+                <div>
+                     <h4 class="font-semibold mb-2 text-center text-gray-600">Description</h4>
+                     <ul id="matching-descs" class="matching-list">
+                        <li class="matching-item" data-match="mar">Holds the memory address being read from or written to.</li>
+                        <li class="matching-item" data-match="alu">Performs calculations and logical comparisons.</li>
+                        <li class="matching-item" data-match="pc">Holds the address of the next instruction to be fetched.</li>
+                        <li class="matching-item" data-match="cu">Decodes instructions and controls data flow.</li>
+                        <li class="matching-item" data-match="acc">Stores the results of calculations temporarily.</li>
+                        <li class="matching-item" data-match="mdr">Temporarily holds data transferred to/from memory.</li>
+                        <li class="matching-item" data-match="cache">Small, fast memory on the CPU for frequently used data.</li>
+                        <li class="matching-item" data-match="registers">General term for small, fast memory locations inside the CPU.</li>
+                    </ul>
+                </div>
+            </div>
+             <button class="check-button" onclick="checkMatching()">Check Matches</button>
+              <button class="reset-button" onclick="setupMatching()">Reset Task 2</button>
+             <div id="matching-feedback" class="feedback-area"></div>
+        </section>
+
+        <section id="task3-register-explorer" class="task-container mb-10">
+            <h3 class="text-xl task-title text-indigo-700"><i class="fas fa-search-plus mr-2"></i>Task 3: Interactive Register Explorer</h3>
+            <p class="mb-4 text-gray-700">Click on each register below to learn more about its specific function.</p>
+            <div class="register-explorer-container">
+                <button class="register-button" data-register="pc" onclick="showRegisterInfo('pc')">PC</button>
+                <button class="register-button" data-register="mar" onclick="showRegisterInfo('mar')">MAR</button>
+                <button class="register-button" data-register="mdr" onclick="showRegisterInfo('mdr')">MDR</button>
+                <button class="register-button" data-register="cir" onclick="showRegisterInfo('cir')">CIR</button>
+                <button class="register-button" data-register="acc" onclick="showRegisterInfo('acc')">ACC</button>
+            </div>
+            <div id="register-info-panel">
+                Click a register button above to see its details.
+            </div>
+            <button class="reset-button" onclick="resetRegisterExplorer()">Reset Explorer</button>
+        </section>
+
+        <section id="task4-bus-simulation" class="task-container mb-10">
+             <h3 class="text-xl task-title text-indigo-700"><i class="fas fa-route mr-2"></i>Task 4: Bus Simulation</h3>
+             <p class="mb-4 text-gray-700">Click the buttons to see how the different <span class="keyword">buses<span class="tooltip">Communication pathways between components like CPU and RAM. Typically include Address Bus, Data Bus, and Control Bus.</span></span> are used for reading from and writing to <span class="keyword">RAM<span class="tooltip">Random Access Memory (Main memory). Volatile storage where currently running programs and data are held for the CPU.</span></span>.</p>
+
+             <div class="bus-sim-container">
+                 <div class="bus-sim-component bus-sim-cpu">CPU</div>
+                 <div class="bus-sim-component bus-sim-ram">RAM</div>
+                 <div class="bus-sim-line bus-sim-address"></div>
+                 <div class="bus-sim-line bus-sim-data"></div>
+                 <div class="bus-sim-line bus-sim-control"></div>
+                 <div id="bus-packet-address" class="bus-sim-packet address"></div>
+                 <div id="bus-packet-data" class="bus-sim-packet data"></div>
+                 <div id="bus-packet-control" class="bus-sim-packet control"></div>
+             </div>
+             <div id="bus-sim-description">Click a button to start the simulation.</div>
+             <div class="mt-4 text-center">
+                 <button class="sim-button" onclick="simulateBus('read')">Simulate Read from Address 5</button>
+                 <button class="sim-button" onclick="simulateBus('write')">Simulate Write 99 to Address 7</button>
+                 <button class="sim-button reset" onclick="resetBusSimulation()">Reset Simulation</button>
+             </div>
+        </section>
+
+        <section id="real-world-architecture" class="mb-10">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold text-indigo-600"><i class="fas fa-microchip mr-2 text-blue-500"></i> Real-World Connection: The Physical CPU & Motherboard</h2>
+                <label class="flex items-center text-sm text-gray-500 cursor-pointer hover:text-gray-700">
+                    <input type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mr-1.5 cursor-pointer">
+                    Read
+                </label>
+            </div>
+            <div class="bg-blue-50 p-5 rounded-lg border border-blue-200 space-y-3">
+                <p class="text-gray-700">While we talk about components and buses abstractly, they are physical parts of a computer:</p>
+                <ul class="list-disc list-inside space-y-2 text-blue-800 pl-4">
+                    <li><strong class="font-semibold">The CPU Chip:</strong> The <span class="keyword">ALU<span class="tooltip">Arithmetic Logic Unit: Performs mathematical operations (ADD, SUBTRACT, shifts) and logical comparisons (AND, OR, NOT, >, <, ==) in the CPU.</span></span>, <span class="keyword">Control Unit<span class="tooltip">Component of the CPU which controls the flow of data around the CPU, communication between the CPU and input/output devices, decodes and executes instructions.</span></span>, <span class="keyword">Cache<span class="tooltip">A small amount of very fast memory built on or very close to the CPU. Stores frequently used instructions and data, making access much faster than fetching from RAM.</span></span>, and <span class="keyword">Registers<span class="tooltip">The collection of tiny areas of extremely fast memory located *inside* the CPU, each with a specific purpose, where data or control information is stored temporarily. Examples: MAR, MDR, PC, Accumulator.</span></span> are all tiny circuits etched onto a single silicon chip – the CPU itself!</li>
+                    <li><strong class="font-semibold">RAM Modules:</strong> <span class="keyword">RAM<span class="tooltip">Random Access Memory (Main memory). Volatile storage where currently running programs and data are held for the CPU.</span></span> comes as separate sticks (modules) that plug into slots on the motherboard.</li>
+                    <li><strong class="font-semibold">The Motherboard:</strong> This is the main circuit board. The CPU plugs into a socket on the motherboard, and the RAM plugs into slots. The <span class="keyword">Buses<span class="tooltip">Any of three communication pathways between the CPU and RAM in the Von Neumann architecture. There is one for addresses (Address Bus), one for data (Data Bus) and one for control signals (Control Bus).</span></span> are actually physical pathways (traces) printed onto the surface of the motherboard, connecting the CPU socket to the RAM slots and other components.</li>
+                </ul>
+                <p class="text-gray-700 mt-3 italic">
+                    So, when the CPU fetches an instruction, electrical signals representing the address travel along the physical Address Bus traces on the motherboard to the RAM module, and the data/instruction travels back along the Data Bus traces. The Control Unit sends timing and command signals along the Control Bus traces.
+                </p>
+                 <p class="text-sm text-gray-600 mt-3 italic">
+                    Understanding the FDE cycle and the role of each component helps explain why the layout and connections on a motherboard are designed the way they are!
+                </p>
+            </div>
+        </section>
+
+        <section id="common-misconceptions" class="mb-10">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold text-indigo-600"><i class="fas fa-lightbulb-exclamation mr-2 text-red-500"></i> Myth Busters: Common Misconceptions</h2>
+                <label class="flex items-center text-sm text-gray-500 cursor-pointer hover:text-gray-700">
+                    <input type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mr-1.5 cursor-pointer">
+                    Read
+                </label>
+            </div>
+            <div class="bg-red-50 p-5 rounded-lg border border-red-200 space-y-4">
+                <div class="myth">
+                    <p><strong class="font-semibold text-red-800">Myth 1:</strong> "All registers are the same and just hold temporary data."</p>
+                    <p class="text-sm text-red-700 mt-1 pl-4"><strong>Reality:</strong> While all <span class="keyword">registers<span class="tooltip">The collection of tiny areas of extremely fast memory located *inside* the CPU, each with a specific purpose, where data or control information is stored temporarily. Examples: MAR, MDR, PC, Accumulator.</span></span> are fast memory locations inside the CPU, they have highly specialized roles. The <span class="keyword">PC<span class="tooltip">Program Counter: Holds the address of the next instruction to be fetched.</span></span> tracks the address of the next instruction, the <span class="keyword">MAR<span class="tooltip">Memory Address Register: Holds the address of the memory location being accessed.</span></span> holds the address for the current memory access, the <span class="keyword">MDR<span class="tooltip">Memory Data Register: Temporarily holds data or instructions transferred to/from memory.</span></span> buffers data or instructions transferred from memory, and the <span class="keyword">ACC<span class="tooltip">Accumulator: A register used with the ALU that stores the intermediate results of calculations.</span></span> holds the results of calculations. They are not interchangeable!</p>
+                </div>
+                <div class="myth border-t border-red-200 pt-4">
+                    <p><strong class="font-semibold text-red-800">Myth 2:</strong> "The CPU processes instructions instantly."</p>
+                    <p class="text-sm text-red-700 mt-1 pl-4"><strong>Reality:</strong> Every instruction must go through the <span class="keyword">Fetch-Decode-Execute Cycle<span class="tooltip">Also known as the instruction cycle, the complete process of retrieving an instruction from store, decoding it and carrying it out.</span></span>. Each step takes a small but measurable amount of time, limited by factors like the CPU's <span class="keyword">clock speed<span class="tooltip">The number of FDE cycles a CPU can perform per second (measured in Hz, typically GHz).</span></span> and the speed at which data can be transferred between components using the <span class="keyword">buses<span class="tooltip">Any of three communication pathways between the CPU and RAM in the Von Neumann architecture. There is one for addresses (Address Bus), one for data (Data Bus) and one for control signals (Control Bus).</span></span>.</p>
+                </div>
+                 <div class="myth border-t border-red-200 pt-4">
+                    <p><strong class="font-semibold text-red-800">Myth 3:</strong> "Buses are just simple wires connecting things."</p>
+                    <p class="text-sm text-red-700 mt-1 pl-4"><strong>Reality:</strong> While they are pathways, <span class="keyword">buses<span class="tooltip">Any of three communication pathways between the CPU and RAM in the Von Neumann architecture. There is one for addresses (Address Bus), one for data (Data Bus) and one for control signals (Control Bus).</span></span> are complex communication channels with specific widths (determining how much data can travel simultaneously) and speeds. The <span class="keyword">Address Bus<span class="tooltip">The bus used by the CPU to specify the memory address it wants to access.</span></span>, <span class="keyword">Data Bus<span class="tooltip">The bus used to transfer actual data and instructions between the CPU and RAM.</span></span>, and <span class="keyword">Control Bus<span class="tooltip">The bus used to send control signals between the CPU and other components (e.g., memory read/write signals).</span></span> each have distinct roles and limitations that significantly affect overall system performance.</p>
+                </div>
+            </div>
+        </section>
+
+
+
+        <section id="task5-scenarios" class="task-container mb-10">
+            <h3 class="text-xl task-title text-indigo-700"><i class="fas fa-clipboard-question mr-2"></i>Task 5: Register Role Play</h3>
+            <p class="mb-4 text-gray-700">For each scenario, choose the register that is primarily involved.</p>
+            <div class="scenario-question mb-4 p-4 bg-white rounded border border-gray-200" data-answered="false">
+                <p class="font-medium mb-2">Scenario 1: The CPU is about to fetch the next instruction. Which register holds the *address* of this instruction?</p>
+                <div class="space-y-2">
+                    <button onclick="checkScenarioAnswer(this, 'PC')" class="scenario-option block w-full text-left p-2 border rounded-md bg-white border-gray-300">Program Counter (PC)</button>
+                    <button onclick="checkScenarioAnswer(this, 'PC')" class="scenario-option block w-full text-left p-2 border rounded-md bg-white border-gray-300">Memory Address Register (MAR)</button>
+                    <button onclick="checkScenarioAnswer(this, 'PC')" class="scenario-option block w-full text-left p-2 border rounded-md bg-white border-gray-300">Memory Data Register (MDR)</button>
+                    <button onclick="checkScenarioAnswer(this, 'PC')" class="scenario-option block w-full text-left p-2 border rounded-md bg-white border-gray-300">Accumulator (ACC)</button>
+                </div>
+                <div class="scenario-feedback"></div>
+            </div>
+            <div class="scenario-question mb-4 p-4 bg-white rounded border border-gray-200" data-answered="false">
+                <p class="font-medium mb-2">Scenario 2: An instruction <code class="text-sm bg-gray-200 px-1 rounded">ADD 6</code> has just been fetched from memory and is being transferred to the CPU. Which register temporarily holds this instruction data?</p>
+                <div class="space-y-2">
+                    <button onclick="checkScenarioAnswer(this, 'MDR')" class="scenario-option block w-full text-left p-2 border rounded-md bg-white border-gray-300">Program Counter (PC)</button>
+                    <button onclick="checkScenarioAnswer(this, 'MDR')" class="scenario-option block w-full text-left p-2 border rounded-md bg-white border-gray-300">Memory Address Register (MAR)</button>
+                    <button onclick="checkScenarioAnswer(this, 'MDR')" class="scenario-option block w-full text-left p-2 border rounded-md bg-white border-gray-300">Memory Data Register (MDR)</button>
+                    <button onclick="checkScenarioAnswer(this, 'MDR')" class="scenario-option block w-full text-left p-2 border rounded-md bg-white border-gray-300">Accumulator (ACC)</button>
+                </div>
+                 <div class="scenario-feedback"></div>
+            </div>
+            <div class="scenario-question p-4 bg-white rounded border border-gray-200" data-answered="false">
+                <p class="font-medium mb-2">Scenario 3: The result of <code class="text-sm bg-gray-200 px-1 rounded">5 + 3</code> was just calculated by the ALU. Which register is most likely holding the result (8)?</p>
+                 <div class="space-y-2">
+                    <button onclick="checkScenarioAnswer(this, 'ACC')" class="scenario-option block w-full text-left p-2 border rounded-md bg-white border-gray-300">Program Counter (PC)</button>
+                    <button onclick="checkScenarioAnswer(this, 'ACC')" class="scenario-option block w-full text-left p-2 border rounded-md bg-white border-gray-300">Memory Address Register (MAR)</button>
+                    <button onclick="checkScenarioAnswer(this, 'ACC')" class="scenario-option block w-full text-left p-2 border rounded-md bg-white border-gray-300">Memory Data Register (MDR)</button>
+                    <button onclick="checkScenarioAnswer(this, 'ACC')" class="scenario-option block w-full text-left p-2 border rounded-md bg-white border-gray-300">Accumulator (ACC)</button>
+                </div>
+                 <div class="scenario-feedback"></div>
+            </div>
+            <button class="reset-button" onclick="resetScenarios()">Reset Scenarios</button>
+        </section>
+
+         <section id="task6-fill-blanks" class="task-container mb-10">
+             <h3 class="text-xl task-title text-indigo-700"><i class="fas fa-pen-fancy mr-2"></i>Task 6: Complete the Sentences</h3>
+             <p class="mb-4 text-gray-700">Fill in the missing keywords in the sentences below.</p>
+             <div class="space-y-3 text-gray-800">
+                 <p>1. The <span id="fill-1" class="fill-blank" contenteditable="true" data-placeholder="Component"></span> decodes instructions and manages the flow of data.</p>
+                 <p>2. Arithmetic and logic operations are performed by the <span id="fill-2" class="fill-blank" contenteditable="true" data-placeholder="Component"></span>.</p>
+                 <p>3. The <span id="fill-3" class="fill-blank" contenteditable="true" data-placeholder="Register"></span> holds the address of the memory location to be accessed.</p>
+                 <p>4. Data or instructions fetched from RAM are temporarily stored in the <span id="fill-4" class="fill-blank" contenteditable="true" data-placeholder="Register"></span>.</p>
+                 <p>5. The concept that instructions and data are stored in the same memory is called the <span id="fill-5" class="fill-blank" contenteditable="true" data-placeholder="Concept"></span>.</p>
+                 <p>6. The <span id="fill-6" class="fill-blank" contenteditable="true" data-placeholder="Register"></span> always contains the memory address of the next instruction to be fetched.</p>
+             </div>
+             <button class="check-button" onclick="checkFillBlanksTask4()">Check Blanks</button>
+              <button class="reset-button" onclick="resetFillBlanksTask4()">Reset Task 6</button>
+             <div id="fill-blanks-feedback" class="feedback-area"></div>
+        </section>
+
+        <section id="quiz" class="task-container mb-10">
+            <h3 class="text-xl task-title text-indigo-700"><i class="fas fa-question-circle mr-2"></i>Task 7: Check Your Knowledge Quiz</h3>
+            <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                 <div class="flex justify-between items-center mb-4">
+                    <p class="text-lg font-medium text-purple-800">Component Quiz</p>
+                    <p class="text-lg font-semibold text-purple-800">Score: <span id="score">0</span> / <span id="total-questions">0</span></p>
+                </div>
+                <div id="quiz-questions">
+                    </div>
+                <button id="reset-quiz-btn" class="mt-6 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition duration-200 hidden">Reset Task 7</button>
+            </div>
+        </section>
+
+        <section id="task8-exam-practice" class="task-container mb-10">
+             <h3 class="text-xl task-title text-indigo-700"><i class="fas fa-graduation-cap mr-2"></i>Task 8: Exam Practice Questions</h3>
+             <p class="mb-4 text-gray-700">Answer these exam-style questions. Use the 'Show Mark Scheme' button to check your understanding against the key points.</p>
+
+             <div class="exam-question mb-6 p-4 bg-white rounded border border-gray-200" data-marks="2">
+                <h4 class="mb-3 font-medium text-gray-800">1. Describe the purpose of the Program Counter (PC) in the fetch-decode-execute cycle. (<span class="marks-value">2</span> marks)</h4>
+                <textarea id="exam-q-pc" class="exam-answer-area w-full p-2 border border-gray-300 rounded-md" placeholder="Type your description here..." rows="3"></textarea>
+                <div class="exam-controls mt-2 flex items-center space-x-4">
+                    <div>
+                        <label for="self-assess-q1" class="text-sm text-gray-600">My predicted marks:</label>
+                        <input type="number" id="self-assess-q1" class="self-assess-input w-20 p-1 border border-gray-300 rounded" min="0" />
+                    </div>
+                    <button class="toggle-mark-scheme-btn px-3 py-1.5 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed" data-mark-scheme-id="ms-pc" disabled>Show Mark Scheme</button>
+                </div>
+                <div id="ms-pc" class="mark-scheme hidden bg-gray-100 p-3 mt-2 rounded border border-gray-200">
+                    <p><strong>Mark Scheme (PC):</strong></p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>A register (1 mark)</li>
+                        <li>that holds a single address (1 mark)</li>
+                        <li>of the next instruction to be fetched/run during the fetch-execute cycle (1 mark)</li>
+                    </ul>
+                    <p class="text-xs italic mt-1">(Max 2 marks)</p>
+                </div>
+            </div>
+
+            <div class="exam-question mb-6 p-4 bg-white rounded border border-gray-200" data-marks="4">
+                <h4 class="mb-3 font-medium text-gray-800">2. Explain the role of the Memory Address Register (MAR) and the Memory Data Register (MDR) when fetching an instruction from RAM. (<span class="marks-value">4</span> marks)</h4>
+                 <textarea id="exam-q-mar-mdr" class="exam-answer-area w-full p-2 border border-gray-300 rounded-md" placeholder="Explain the roles of both MAR and MDR..." rows="4"></textarea>
+                 <div class="exam-controls mt-2 flex items-center space-x-4">
+                    <div>
+                        <label for="self-assess-q2" class="text-sm text-gray-600">My predicted marks:</label>
+                        <input type="number" id="self-assess-q2" class="self-assess-input w-20 p-1 border border-gray-300 rounded" min="0" />
+                    </div>
+                    <button class="toggle-mark-scheme-btn px-3 py-1.5 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed" data-mark-scheme-id="ms-mar-mdr" disabled>Show Mark Scheme</button>
+                </div>
+                 <div id="ms-mar-mdr" class="mark-scheme hidden bg-gray-100 p-3 mt-2 rounded border border-gray-200">
+                     <p><strong>Mark Scheme (MAR/MDR Fetch):</strong></p>
+                     <ul class="list-disc list-inside ml-4">
+                         <li>MAR stores the memory address (1 mark)</li>
+                         <li>of the instruction/data to be fetched/accessed (1 mark)</li>
+                         <li>MDR stores the instruction/data (1 mark)</li>
+                         <li>that has been fetched/read from memory (1 mark)</li>
+                     </ul>
+                      <p class="text-xs italic mt-1">(Max 4 marks)</p>
+                 </div>
+            </div>
+
+             <div class="exam-question p-4 bg-white rounded border border-gray-200" data-marks="2">
+                <h4 class="mb-3 font-medium text-gray-800">3. Describe the purpose of the Accumulator (ACC). (<span class="marks-value">2</span> marks)</h4>
+                 <textarea id="exam-q-acc" class="exam-answer-area w-full p-2 border border-gray-300 rounded-md" placeholder="Type your description here..." rows="3"></textarea>
+                 <div class="exam-controls mt-2 flex items-center space-x-4">
+                     <div>
+                        <label for="self-assess-q3" class="text-sm text-gray-600">My predicted marks:</label>
+                        <input type="number" id="self-assess-q3" class="self-assess-input w-20 p-1 border border-gray-300 rounded" min="0" />
+                    </div>
+                    <button class="toggle-mark-scheme-btn px-3 py-1.5 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed" data-mark-scheme-id="ms-acc" disabled>Show Mark Scheme</button>
+                </div>
+                 <div id="ms-acc" class="mark-scheme hidden bg-gray-100 p-3 mt-2 rounded border border-gray-200">
+                     <p><strong>Mark Scheme (ACC):</strong></p>
+                     <ul class="list-disc list-inside ml-4">
+                         <li>A register used with the ALU (1 mark)</li>
+                         <li>that stores the result of a process/calculation (1 mark)</li>
+                     </ul>
+                      <p class="text-xs italic mt-1">(Max 2 marks)</p>
+                 </div>
+            </div>
+            <button class="reset-button mt-4" onclick="resetTask8()">Reset Task 8</button>
+        </section>
+
+         <section id="final-score-section" class="task-container mb-10 text-center">
+             <h3 class="text-xl task-title text-indigo-700"><i class="fas fa-trophy mr-2"></i>Lesson Score</h3>
+             <p class="mb-4 text-gray-700">Click the button below to calculate your total score for the interactive tasks.</p>
+             <button id="calculate-score-btn" class="final-button" onclick="calculateTotalScore()">Calculate Final Score</button>
+             <button id="export-pdf-btn" class="export-pdf-button no-print" onclick="exportToPDF()">Export to PDF</button>
+             <button id="reset-all-btn" class="reset-button no-print" onclick="resetAllTasks()">Reset All Tasks</button>             <div id="final-score-area" class="mt-4">
+                 <div id="final-score-display"></div>
+                 <div id="final-score-feedback"></div>
+             </div>
+         </section>
+
+        <section id="related-videos" class="mb-10">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold text-indigo-600"><i class="fas fa-video mr-2 text-purple-500"></i> Related Videos</h2>
+                <label class="flex items-center text-sm text-gray-500 cursor-pointer hover:text-gray-700">
+                    <input type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mr-1.5 cursor-pointer">
+                    Read
+                </label>
+            </div>
+            <div class="bg-purple-50 p-5 rounded-lg border border-purple-200 space-y-4">
+                <p class="text-gray-700">Watch these videos to reinforce your understanding of CPU components and architecture:</p>
+                <ul class="list-disc list-inside space-y-3 text-purple-800 pl-4">
+                    <li>
+                        <strong>1.1 The purpose of the CPU - The fetch-execute cycle</strong> <!-- e.g., Von Neumann Architecture Explained -->
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/7Up7DIPkTzo?si=MgWM102cq8AFetLL" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                        <div class="mt-2">
+                            <textarea class="w-full p-2 border border-purple-300 rounded-md text-sm bg-white" rows="3" placeholder="Optional: Add any additional notes from this video..."></textarea>
+                        </div>
+                    </li>
+                    <li>
+                        <strong>1.1 CPU components and their function</strong> <!-- e.g., CPU Registers Explained -->
+<iframe width="560" height="315" src="https://www.youtube.com/embed/hk9LPXzYeT0?si=HAl2K1i7UeyIDmc5" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                        <div class="mt-2">
+                            <textarea class="w-full p-2 border border-purple-300 rounded-md text-sm bg-white" rows="3" placeholder="Optional: Add any additional notes from this video..."></textarea>
+                        </div>
+                    </li>
+                    <li>
+                        <strong>Additional Video: CPU Components & FDE Cycle (was 1.1 Von Neumann architecture)</strong>
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/KBmoqwVt4Qg?si=TOn42jxJN1DKxBYu" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                        <div class="mt-2">
+                            <textarea class="w-full p-2 border border-purple-300 rounded-md text-sm bg-white" rows="3" placeholder="Optional: Add any additional notes from this video..."></textarea>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+         <section id="key-takeaways" class="mb-10">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold text-indigo-600"><i class="fas fa-key mr-2"></i>Key Takeaways</h2>
+                <label class="flex items-center text-sm text-gray-500 cursor-pointer hover:text-gray-700">
+                    <input type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mr-1.5 cursor-pointer">
+                    Read
+                </label>
+            </div>
+            <!-- Removed reveal button -->
+            <div class="bg-yellow-50 p-5 rounded-lg border border-yellow-300 space-y-2 show"> <!-- Restored space-y-2, added show class, removed ID and reveal-content -->
+                <ul class="list-disc list-inside space-y-1 text-yellow-800">
+                    <li><strong class="font-semibold">Von Neumann Architecture:</strong> Defines a computer with a <span class="keyword">CPU<span class="tooltip">Central Processing Unit: This component repeatedly fetches, decodes and executes instructions. Often abbreviated to CPU.</span></span>, <span class="keyword">Memory<span class="tooltip">Usually refers to RAM (Main Memory), where data and instructions are stored for the CPU to access quickly.</span></span> (holding both instructions and data), and communication pathways called <span class="keyword">Buses<span class="tooltip">Any of three communication pathways between the CPU and RAM in the Von Neumann architecture. There is one for addresses (Address Bus), one for data (Data Bus) and one for control signals (Control Bus).</span></span>.</li>
+                    <li><strong class="font-semibold">CPU Components:</strong> Includes the <span class="keyword">Control Unit<span class="tooltip">Component of the CPU which controls the flow of data around the CPU, communication between the CPU and input/output devices, decodes and executes instructions.</span></span> (manages operations), <span class="keyword">ALU<span class="tooltip">Arithmetic Logic Unit: Performs mathematical operations (ADD, SUBTRACT, shifts) and logical comparisons (AND, OR, NOT, >, <, ==) in the CPU.</span></span> (performs calculations/logic), and <span class="keyword">Registers<span class="tooltip">The collection of tiny areas of extremely fast memory located *inside* the CPU, each with a specific purpose, where data or control information is stored temporarily. Examples: MAR, MDR, PC, Accumulator.</span></span> (fast, temporary storage).</li>
+                    <li><strong class="font-semibold">Key Registers:</strong>
+                        <ul class="list-circle list-inside ml-4">
+                            <li><span class="keyword">PC<span class="tooltip">Program Counter: Holds the address of the next instruction to be fetched.</span></span>: Address of the next instruction.</li>
+                            <li><span class="keyword">MAR<span class="tooltip">Memory Address Register: Holds the address of the memory location being accessed.</span></span>: Holds the memory address to access.</li>
+                            <li><span class="keyword">MDR<span class="tooltip">Memory Data Register: Temporarily holds data or instructions transferred to/from memory.</span></span>: Holds data/instruction transferred to/from memory.</li>
+                            <li><span class="keyword">ACC<span class="tooltip">Accumulator: A register used with the ALU that stores the intermediate results of calculations.</span></span>: Stores results from the ALU.</li>
+                        </ul>
+                    </li>
+                    <li><strong class="font-semibold">Buses:</strong> The <span class="keyword">Address Bus<span class="tooltip">The bus used by the CPU to specify the memory address it wants to access.</span></span> carries addresses, the <span class="keyword">Data Bus<span class="tooltip">The bus used to transfer actual data and instructions between the CPU and RAM.</span></span> carries data/instructions, and the <span class="keyword">Control Bus<span class="tooltip">The bus used to send control signals between the CPU and other components (e.g., memory read/write signals).</span></span> carries command signals.</li>
+                </ul>
+            </div>
+        </section>
+
+         <section id="next-steps">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold text-indigo-600">What's Next?</h2>
+                <label class="flex items-center text-sm text-gray-500 cursor-pointer hover:text-gray-700">
+                    <input type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mr-1.5 cursor-pointer">
+                    Read
+                </label>
+            </div>
+            <div class="bg-teal-50 p-5 rounded-lg border border-teal-300">
+                <p class="text-teal-800 font-medium">
+                    You now know about the key components inside the CPU and how they relate to the Von Neumann architecture!
+                </p>
+                <p class="text-teal-700 mt-2">
+                    Next, we'll look at:
+                </p>
+                <ul class="list-disc list-inside space-y-1 text-teal-700 mt-3 pl-4">
+                    <li>How factors like <span class="keyword">Clock Speed<span class="tooltip">The number of FDE cycles a CPU can perform per second (measured in Hz, typically GHz).</span></span>, number of <span class="keyword">Cores<span class="tooltip">An individual processing unit within a CPU. Multi-core CPUs have more than one.</span></span>, and <span class="keyword">Cache<span class="tooltip">Small, fast memory located on or near the CPU to store frequently accessed data/instructions.</span></span> size affect CPU performance (Spec 1.1.2).</li>
+                    <li><span class="keyword">Embedded Systems<span class="tooltip">A computer system with a dedicated function within a larger mechanical or electrical system. Often includes hardware and software together.</span></span> (Spec 1.1.3).</li>
+                     <li>Memory and Storage types (Spec 1.2).</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="extension-activities" class="mb-10">
+            <h2 class="text-2xl font-semibold text-indigo-600 mb-4"><i class="fas fa-puzzle-piece mr-2 text-orange-500"></i> Extension Activities</h2>
+            <div class="bg-orange-50 p-5 rounded-lg border border-orange-200 space-y-6">
+                <div class="extension-task">
+                    <h3 class="font-semibold text-orange-800 mb-2">1. Harvard Architecture</h3>
+                    <p class="text-sm text-gray-700 mb-2">The Von Neumann architecture uses the same memory and buses for both instructions and data. An alternative is the <strong class="text-orange-700">Harvard architecture</strong>, which uses separate memory spaces and buses for instructions and data.</p>
+                    <p class="text-sm text-gray-700 mb-2">Research Task: What is the main advantage of using separate buses for instructions and data in the Harvard architecture, especially regarding the Fetch-Decode-Execute cycle? Where is this architecture commonly used?</p>
+                    <textarea rows="4" class="w-full p-2 border border-orange-300 rounded-md bg-white" placeholder="Advantage of separate buses? Common uses?"></textarea>
+                </div>
+                <div class="extension-task border-t border-orange-200 pt-4">
+                    <h3 class="font-semibold text-orange-800 mb-2">2. Instruction Pipelining</h3>
+                    <p class="text-sm text-gray-700 mb-2">Modern CPUs don't usually wait for one instruction to completely finish the FDE cycle before starting the next. They use a technique called <strong class="text-orange-700">pipelining</strong>, where different stages of multiple instructions overlap, like an assembly line.</p>
+                    <p class="text-sm text-gray-700 mb-2">Research Task: How does pipelining improve CPU throughput (the number of instructions completed per unit of time)? What potential problem, known as a 'hazard', can occur with pipelining?</p>
+                    <textarea rows="4" class="w-full p-2 border border-orange-300 rounded-md bg-white" placeholder="How does pipelining help? What's a hazard?"></textarea>
+                </div>
+            </div>
+        </section>
+
+
+    </div>
+
+    
+    <script src="js/gcse-sysarch-arch.js"></script>
+    <script src="js/worksheet-common.js"></script>
+</body>
+
+
+    <script src="js/worksheet-common.js"></script>
+</body>
+
+</html>

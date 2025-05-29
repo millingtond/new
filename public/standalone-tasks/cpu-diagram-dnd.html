@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task: Label CPU Components</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="../common-task-assets/css/style.css">
+    <style>
+        body { padding: 20px; background-color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .task-container { max-width: 800px; margin: 20px auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .back-link { display: inline-block; margin-bottom: 20px; color: #4f46e5; text-decoration: none; font-weight: 500; padding: 8px 12px; background-color: #eef2ff; border-radius: 6px; }
+        .back-link:hover { text-decoration: underline; background-color: #e0e7ff;}
+        /* Minimal styles to ensure basic layout if main CSS doesn't cover everything for the snippet */
+        .diagram-layout-container {
+            position: relative; width: 100%; max-width: 600px; min-height: 420px; /* Use min-height */
+            margin: 1rem auto; background-color: #f0f0f0; border: 1px solid #ccc;
+            border-radius: 8px; overflow: auto; /* Allow scroll if content overflows */
+        }
+         /* Add other critical styles from your style.css that are needed for task1-dragdrop if they are not globally applied */
+    </style>
+</head>
+<body>
+    <a href="javascript:history.back()" class="back-link">&larr; Back to Lesson</a>
+    <div class="task-container">
+        <section id="task1-dragdrop" class="task-container mb-10">
+            <h3 class="text-xl task-title text-indigo-700"><i class="fas fa-arrows-up-down-left-right mr-2"></i>Task 1: Label the CPU Components</h3>
+            <p class="mb-4 text-gray-700">Drag the labels from the bank below onto the correct component boxes in the diagram. Hover over the <i class="fas fa-circle-question text-gray-500"></i> icons for hints!</p>
+
+            <div class="diagram-layout-container">
+                <div id="diagram-registers" class="diagram-component-box">
+                    <div class="drop-zone-wrapper">
+                        <div id="drop-registers-title" class="drop-zone" data-correct="registers" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                        <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">The main title for this group of fast, internal CPU memory locations.</span></span>
+                    </div>
+                    <div class="drop-zone-wrapper">
+                        <div id="drop-pc" class="drop-zone register-zone" data-register="pc" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                         <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Holds the address of the NEXT instruction.</span></span>
+                    </div>
+                     <div class="drop-zone-wrapper">
+                        <div id="drop-mar" class="drop-zone register-zone" data-register="mar" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                         <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Holds the memory ADDRESS to read/write.</span></span>
+                    </div>
+                     <div class="drop-zone-wrapper">
+                        <div id="drop-mdr" class="drop-zone register-zone" data-register="mdr" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                        <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Holds the DATA coming from or going to memory.</span></span>
+                    </div>
+                     <div class="drop-zone-wrapper">
+                        <div id="drop-cir" class="drop-zone register-zone" data-register="cir" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                        <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Holds the CURRENT instruction being processed.</span></span>
+                    </div>
+                </div>
+                <div id="diagram-memory" class="diagram-component-box">
+                     <div class="drop-zone-wrapper">
+                        <div id="drop-memory-title" class="drop-zone" data-correct="memory" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                        <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Stores instructions and data (RAM).</span></span>
+                    </div>
+                     <div class="text-xs p-1 text-gray-700 text-left mt-1">
+                         <p>1. LOAD 5</p><p>2. ADD 6</p><p>3. STO 7</p>
+                         <p>...</p><p>5. 12</p><p>6. 8</p>
+                     </div>
+                </div>
+                <div id="diagram-alu" class="diagram-component-box">
+                    <div class="drop-zone-wrapper">
+                        <div id="drop-alu-title" class="drop-zone" data-correct="alu" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                        <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Performs calculations and logic.</span></span>
+                    </div>
+                </div>
+                 <div id="diagram-cu" class="diagram-component-box">
+                     <div class="drop-zone-wrapper">
+                        <div id="drop-cu-title" class="drop-zone" data-correct="cu" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                        <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Controls the FDE cycle and data flow.</span></span>
+                    </div>
+                 </div>
+                 <div id="diagram-acc" class="diagram-component-box">
+                     <div class="drop-zone-wrapper">
+                        <div id="drop-acc-title" class="drop-zone" data-correct="acc" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)"></div>
+                        <span class="hint-icon"><i class="fas fa-circle-question"></i><span class="hint-tooltip">Temporarily stores calculation results.</span></span>
+                    </div>
+                 </div>
+            </div>
+
+            <div id="label-bank" class="label-bank" ondragover="allowDrop(event)" ondrop="dropLabel(event)" ondragleave="handleDragLeave(event)">
+                <span id="label-item-reg" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="registers">Registers</span>
+                <span id="label-item-pc" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="pc">PC</span>
+                <span id="label-item-mar" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="mar">MAR</span>
+                <span id="label-item-mdr" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="mdr">MDR</span>
+                <span id="label-item-cir" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="cir">CIR</span>
+                <span id="label-item-acc" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="acc">Accumulator</span>
+                <span id="label-item-alu" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="alu">ALU</span>
+                <span id="label-item-cu" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="cu">Control Unit</span>
+                <span id="label-item-mem" class="draggable-label" draggable="true" ondragstart="dragLabel(event)" data-label="memory">Memory</span>
+            </div>
+
+            <button class="check-button" onclick="checkDragDropLabels()">Check Diagram Labels</button>
+            <button class="reset-button" onclick="resetDragDropTask1()">Reset Task 1</button>
+            <div id="dragdrop-feedback" class="feedback-area"></div>
+        </section>
+    </div>
+    
+    
+    <script src="../common-task-assets/js/worksheet-common.js"></script>
+    <script src="../common-task-assets/js/gcse-sysarch-arch.js"></script>
+</body>
+</html>

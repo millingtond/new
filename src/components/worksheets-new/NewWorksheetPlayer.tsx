@@ -18,7 +18,7 @@ import { throttle } from 'lodash';
 import RichTextSectionDisplay from './sections/RichTextSectionDisplay';
 import StarterActivitySectionDisplay from './sections/StarterActivitySectionDisplay';
 import LessonOutcomesSectionDisplay from './sections/LessonOutcomesSectionDisplay';
-import DiagramLabelDragDropDisplay from './sections/DiagramLabelDragDropDisplay';
+// import DiagramLabelDragDropDisplay from './sections/DiagramLabelDragDropDisplay'; // Assuming this was the complex one, we'll use a placeholder
 import MatchingTaskSectionDisplay from './sections/MatchingTaskSectionDisplay';
 import RegisterExplorerSectionDisplay from './sections/RegisterExplorerSectionDisplay';
 import BusSimulationSectionDisplay from './sections/BusSimulationSectionDisplay';
@@ -32,6 +32,30 @@ import ExtensionActivitiesSectionDisplay from './sections/ExtensionActivitiesSec
 
 import NavigationControls from './controls/NavigationControls';
 import ActionToolbar from './controls/ActionToolbar';
+
+// Placeholder for DiagramLabelDragDrop if the complex one is removed or not used at this stage
+const PlaceholderDiagramLabelDragDropDisplay: React.FC<{ section: DiagramLabelDragDropSection }> = ({ section }) => {
+  return (
+    <div className="p-4 border rounded-lg shadow bg-white mb-6">
+      <h3 className="text-xl font-semibold text-indigo-700 mb-3">{section.title}</h3>
+      {section.introText && (
+        <div
+          className="prose prose-sm max-w-none mb-4 text-slate-700"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(section.introText) }}
+        />
+      )}
+      <div className="p-4 bg-yellow-100 border border-yellow-300 rounded-md text-yellow-700">
+        <p><i className="fas fa-wrench mr-2"></i>Interactive Diagram Labeling Task will be displayed here.</p>
+        <p className="text-xs mt-1">This is a placeholder. The full interactive component for this task type is under development or was part of a different implementation branch.</p>
+      </div>
+       {/* You would add basic rendering of labels and dropzones if needed for a non-interactive preview,
+           or inputs if this placeholder should allow some form of manual answer entry.
+           For now, it's just a notice.
+       */}
+    </div>
+  );
+};
+
 
 interface NewWorksheetPlayerProps {
   worksheetData: NewWorksheet;
@@ -48,107 +72,41 @@ const NewWorksheetPlayer: React.FC<NewWorksheetPlayerProps> = ({
 }) => {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [progress, setProgress] = useState<NewWorksheetStudentProgress>(() => {
-    // Initialize progress: use initialProgress if available, otherwise create a new structure.
     if (initialProgress) {
-        // Ensure all sections from worksheetData have a state, even if not in initialProgress
         const completeSectionStates = { ...initialProgress.sectionStates };
         worksheetData.sections.forEach(sec => {
             if (!completeSectionStates[sec.id]) {
                 completeSectionStates[sec.id] = { isCompleted: false, isAttempted: false, answers: {} };
-                 // Initialize answers for activity types if not present
                 if (sec.isActivity && !completeSectionStates[sec.id].answers) {
                      switch(sec.type) {
-                        case 'StarterActivity':
-                            (sec as StarterActivitySection).questions.forEach(q => {
-                                if (!completeSectionStates[sec.id].answers) completeSectionStates[sec.id].answers = {};
-                                completeSectionStates[sec.id].answers![q.id] = { value: '', isAttempted: false };
-                            });
-                            break;
-                        case 'ExamQuestions':
-                            (sec as ExamQuestionsSection).questions.forEach(q => {
-                                if (!completeSectionStates[sec.id].answers) completeSectionStates[sec.id].answers = {};
-                                completeSectionStates[sec.id].answers![q.id] = { value: {answerText: ''}, isAttempted: false };
-                            });
-                            break;
-                        case 'FillTheBlanks':
-                             (sec as FillTheBlanksSection).sentences.forEach(s => {
-                                if (!completeSectionStates[sec.id].answers) completeSectionStates[sec.id].answers = {};
-                                completeSectionStates[sec.id].answers![s.id] = { value: '', isAttempted: false };
-                             });
-                             break;
-                        case 'MultipleChoiceQuiz':
-                            (sec as MultipleChoiceQuizSection).questions.forEach(q => {
-                                if (!completeSectionStates[sec.id].answers) completeSectionStates[sec.id].answers = {};
-                                completeSectionStates[sec.id].answers![q.id] = { value: {selectedAnswer: '', isCorrect: false}, isAttempted: false };
-                            });
-                            break;
-                        case 'ScenarioQuestion':
-                            (sec as ScenarioQuestionSection).scenarios.forEach(s => {
-                                if (!completeSectionStates[sec.id].answers) completeSectionStates[sec.id].answers = {};
-                                completeSectionStates[sec.id].answers![s.id] = { value: {selectedValue: null, isCorrect: null}, isAttempted: false };
-                            });
-                            break;
-                        case 'ExtensionActivities':
-                             (sec as ExtensionActivitiesSection).activities.forEach(act => {
-                                if (!completeSectionStates[sec.id].answers) completeSectionStates[sec.id].answers = {};
-                                completeSectionStates[sec.id].answers![act.id] = { value: '', isAttempted: false };
-                             });
-                             break;
-                        case 'DiagramLabelDragDrop': // Answers are { [dropZoneId: string]: { placedLabelIds: string[], isCorrect?: boolean } }
-                        case 'MatchingTask': // Answers could be { [matchItemId: string]: { selectedDescriptionId: string, isCorrect?: boolean } }
-                             completeSectionStates[sec.id].answers = {}; // Initialize as empty; specific component populates
-                             break;
+                        case 'StarterActivity':(sec as StarterActivitySection).questions.forEach(q => {if (!completeSectionStates[sec.id].answers) completeSectionStates[sec.id].answers = {}; completeSectionStates[sec.id].answers![q.id] = { value: '', isAttempted: false }; }); break;
+                        case 'ExamQuestions': (sec as ExamQuestionsSection).questions.forEach(q => { if (!completeSectionStates[sec.id].answers) completeSectionStates[sec.id].answers = {}; completeSectionStates[sec.id].answers![q.id] = { value: {answerText: ''}, isAttempted: false }; }); break;
+                        case 'FillTheBlanks': (sec as FillTheBlanksSection).sentences.forEach(s => { if (!completeSectionStates[sec.id].answers) completeSectionStates[sec.id].answers = {}; completeSectionStates[sec.id].answers![s.id] = { value: '', isAttempted: false }; }); break;
+                        case 'MultipleChoiceQuiz': (sec as MultipleChoiceQuizSection).questions.forEach(q => { if (!completeSectionStates[sec.id].answers) completeSectionStates[sec.id].answers = {}; completeSectionStates[sec.id].answers![q.id] = { value: {selectedAnswer: '', isCorrect: false}, isAttempted: false }; }); break;
+                        case 'ScenarioQuestion': (sec as ScenarioQuestionSection).scenarios.forEach(s => { if (!completeSectionStates[sec.id].answers) completeSectionStates[sec.id].answers = {}; completeSectionStates[sec.id].answers![s.id] = { value: {selectedValue: null, isCorrect: null}, isAttempted: false }; }); break;
+                        case 'ExtensionActivities': (sec as ExtensionActivitiesSection).activities.forEach(act => { if (!completeSectionStates[sec.id].answers) completeSectionStates[sec.id].answers = {}; completeSectionStates[sec.id].answers![act.id] = { value: '', isAttempted: false }; }); break;
+                        case 'DiagramLabelDragDrop': case 'MatchingTask': completeSectionStates[sec.id].answers = {}; break;
                      }
                 }
             } else if (sec.isActivity && !completeSectionStates[sec.id].answers) {
-                 // If section state exists but answers is missing for an activity, initialize it
                  completeSectionStates[sec.id].answers = {};
-                 // Add specific initializations as above if needed for robustness
             }
         });
         return { ...initialProgress, sectionStates: completeSectionStates };
     }
 
-    // No initialProgress, create from scratch
     const initialSectionStates: Record<string, { isCompleted: boolean; isAttempted?: boolean; answers?: Record<string, TaskAttempt | any> }> = {};
     worksheetData.sections.forEach(sec => {
       initialSectionStates[sec.id] = { isCompleted: false, isAttempted: false, answers: {} };
        if (sec.isActivity) {
          switch(sec.type) {
-            case 'StarterActivity':
-                (sec as StarterActivitySection).questions.forEach(q => {
-                    initialSectionStates[sec.id].answers![q.id] = { value: '', isAttempted: false };
-                });
-                break;
-            case 'ExamQuestions':
-                (sec as ExamQuestionsSection).questions.forEach(q => {
-                    initialSectionStates[sec.id].answers![q.id] = { value: {answerText: ''}, isAttempted: false };
-                });
-                break;
-            case 'FillTheBlanks':
-                 (sec as FillTheBlanksSection).sentences.forEach(s => {
-                    initialSectionStates[sec.id].answers![s.id] = { value: '', isAttempted: false };
-                 });
-                 break;
-            case 'MultipleChoiceQuiz':
-                (sec as MultipleChoiceQuizSection).questions.forEach(q => {
-                    initialSectionStates[sec.id].answers![q.id] = { value: {selectedAnswer: '', isCorrect: false}, isAttempted: false };
-                });
-                break;
-            case 'ScenarioQuestion':
-                (sec as ScenarioQuestionSection).scenarios.forEach(s => {
-                    initialSectionStates[sec.id].answers![s.id] = { value: {selectedValue: null, isCorrect: null}, isAttempted: false };
-                });
-                break;
-            case 'ExtensionActivities':
-                 (sec as ExtensionActivitiesSection).activities.forEach(act => {
-                    initialSectionStates[sec.id].answers![act.id] = { value: '', isAttempted: false };
-                 });
-                 break;
-            case 'DiagramLabelDragDrop': // For D&D, answers are keyed by dropZoneId by the component itself
-            case 'MatchingTask': // Similarly, matching tasks might have complex answer structures
-                 initialSectionStates[sec.id].answers = {}; // Initialize as empty; component will structure it
-                 break;
+            case 'StarterActivity': (sec as StarterActivitySection).questions.forEach(q => { initialSectionStates[sec.id].answers![q.id] = { value: '', isAttempted: false }; }); break;
+            case 'ExamQuestions': (sec as ExamQuestionsSection).questions.forEach(q => { initialSectionStates[sec.id].answers![q.id] = { value: {answerText: ''}, isAttempted: false }; }); break;
+            case 'FillTheBlanks': (sec as FillTheBlanksSection).sentences.forEach(s => { initialSectionStates[sec.id].answers![s.id] = { value: '', isAttempted: false }; }); break;
+            case 'MultipleChoiceQuiz': (sec as MultipleChoiceQuizSection).questions.forEach(q => { initialSectionStates[sec.id].answers![q.id] = { value: {selectedAnswer: '', isCorrect: false}, isAttempted: false }; }); break;
+            case 'ScenarioQuestion': (sec as ScenarioQuestionSection).scenarios.forEach(s => { initialSectionStates[sec.id].answers![s.id] = { value: {selectedValue: null, isCorrect: null}, isAttempted: false }; }); break;
+            case 'ExtensionActivities': (sec as ExtensionActivitiesSection).activities.forEach(act => { initialSectionStates[sec.id].answers![act.id] = { value: '', isAttempted: false }; }); break;
+            case 'DiagramLabelDragDrop': case 'MatchingTask': initialSectionStates[sec.id].answers = {}; break;
          }
       }
     });
@@ -175,7 +133,6 @@ const NewWorksheetPlayer: React.FC<NewWorksheetPlayerProps> = ({
   useEffect(() => {
     if (initialProgress) {
       setCurrentSectionIndex(initialProgress.currentSectionIndex);
-      // setProgress is already handled by the useState initializer
     } else if (progress.overallStatus === 'not-started' && Object.keys(progress.sectionStates).length > 0) {
         debouncedSaveProgress(progress);
     }
@@ -209,9 +166,9 @@ const NewWorksheetPlayer: React.FC<NewWorksheetPlayerProps> = ({
   };
 
   const handleAnswerChange = (
-    sectionId: string, // This is the section.id
-    questionOrItemIdOrAnswers: string | Record<string, any>, // For D&D, this will be the entire answers object for the section
-    value?: any, // For simple Qs, this is the value. For D&D, this is undefined.
+    sectionId: string, 
+    questionOrItemIdOrAnswers: string | Record<string, any>, 
+    value?: any, 
     minLengthForAttempt?: number,
     isDirectlyAttempted?: boolean
   ) => {
@@ -221,7 +178,6 @@ const NewWorksheetPlayer: React.FC<NewWorksheetPlayerProps> = ({
       let sectionNowAttempted = sectionState.isAttempted || false;
 
       if (typeof questionOrItemIdOrAnswers === 'string') {
-        // Handling for simple question types (StarterActivity, FillTheBlanks, etc.)
         const questionId = questionOrItemIdOrAnswers;
         let itemAttempted = isDirectlyAttempted !== undefined ? isDirectlyAttempted : false;
         if (!itemAttempted) {
@@ -244,18 +200,13 @@ const NewWorksheetPlayer: React.FC<NewWorksheetPlayerProps> = ({
         if (itemAttempted) sectionNowAttempted = true;
 
       } else {
-        // Handling for complex answer types like DiagramLabelDragDrop
-        // Here, questionOrItemIdOrAnswers is the entire answers object for the section
         updatedAnswers = questionOrItemIdOrAnswers;
-        // Determine if section is attempted based on the new complex answer structure
-        // For DiagramLabelDragDrop, check if any drop zone has placed items
         if (worksheetData.sections.find(s => s.id === sectionId)?.type === 'DiagramLabelDragDrop') {
             sectionNowAttempted = Object.values(updatedAnswers).some((zoneAnswer: any) => zoneAnswer.placedLabelIds && zoneAnswer.placedLabelIds.length > 0);
         } else {
-            // Add logic for other complex types if needed
             sectionNowAttempted = Object.values(updatedAnswers).some((ans: any) => ans.isAttempted);
         }
-        if (isDirectlyAttempted !== undefined) { // If component explicitly passes attempt status for the whole section
+        if (isDirectlyAttempted !== undefined) { 
             sectionNowAttempted = isDirectlyAttempted;
         }
       }
@@ -287,19 +238,17 @@ const NewWorksheetPlayer: React.FC<NewWorksheetPlayerProps> = ({
 
         if (sectionToResetState && originalSectionDef) {
             if (questionId && sectionToResetState.answers && sectionToResetState.answers[questionId]) {
-                // Reset a specific question/item within the section
                 let defaultValue: any = ''; 
                 if(originalSectionDef.type === 'ExamQuestions') defaultValue = {answerText: ''};
                 else if(originalSectionDef.type === 'MultipleChoiceQuiz') defaultValue = {selectedAnswer: '', isCorrect: false};
                 else if(originalSectionDef.type === 'ScenarioQuestion') defaultValue = {selectedValue: null, isCorrect: null};
                 
                 const resetAttempt: TaskAttempt = { value: defaultValue, isAttempted: false };
+                // isCorrect is implicitly omitted if not applicable
                 sectionToResetState.answers[questionId] = resetAttempt;
-                // Recalculate if section is still attempted
                 sectionToResetState.isAttempted = Object.values(sectionToResetState.answers).some((ans: any) => ans.isAttempted);
 
             } else if (!questionId) {
-                // Reset all answers for the entire section
                 const newAnswersForSection: Record<string, TaskAttempt | any> = {};
                  if (originalSectionDef.isActivity) {
                      switch(originalSectionDef.type) {
@@ -309,11 +258,7 @@ const NewWorksheetPlayer: React.FC<NewWorksheetPlayerProps> = ({
                         case 'MultipleChoiceQuiz': (originalSectionDef as MultipleChoiceQuizSection).questions.forEach(q => { newAnswersForSection[q.id] = { value: {selectedAnswer: '', isCorrect: false}, isAttempted: false };}); break;
                         case 'ScenarioQuestion': (originalSectionDef as ScenarioQuestionSection).scenarios.forEach(s => { newAnswersForSection[s.id] = { value: {selectedValue: null, isCorrect: null}, isAttempted: false };}); break;
                         case 'ExtensionActivities': (originalSectionDef as ExtensionActivitiesSection).activities.forEach(act => { newAnswersForSection[act.id] = { value: '', isAttempted: false }; }); break;
-                        case 'DiagramLabelDragDrop': // For D&D, answers are { [dropZoneId: string]: { placedLabelIds: string[] } }
-                        case 'MatchingTask':
-                             // Resetting to an empty object, the component will re-initialize its internal state.
-                             break; // newAnswersForSection remains {}
-                        default: break; 
+                        case 'DiagramLabelDragDrop': case 'MatchingTask': break; 
                      }
                  }
                 sectionToResetState.answers = newAnswersForSection;
@@ -341,9 +286,7 @@ const NewWorksheetPlayer: React.FC<NewWorksheetPlayerProps> = ({
                 case 'MultipleChoiceQuiz': (sec as MultipleChoiceQuizSection).questions.forEach(q => { initialSectionStatesReset[sec.id].answers![q.id] = { value: {selectedAnswer: '', isCorrect: false}, isAttempted: false }; }); break;
                 case 'ScenarioQuestion': (sec as ScenarioQuestionSection).scenarios.forEach(s => { initialSectionStatesReset[sec.id].answers![s.id] = { value: {selectedValue: null, isCorrect: null}, isAttempted: false }; }); break;
                 case 'ExtensionActivities': (sec as ExtensionActivitiesSection).activities.forEach(act => { initialSectionStatesReset[sec.id].answers![act.id] = { value: '', isAttempted: false }; }); break;
-                case 'DiagramLabelDragDrop': 
-                case 'MatchingTask': 
-                    initialSectionStatesReset[sec.id].answers = {}; break; 
+                case 'DiagramLabelDragDrop': case 'MatchingTask': initialSectionStatesReset[sec.id].answers = {}; break; 
             }
         }
     });
@@ -433,24 +376,10 @@ const NewWorksheetPlayer: React.FC<NewWorksheetPlayerProps> = ({
       case 'VideoPlaceholder': 
         contentSummary = (<ul className="list-disc pl-5 space-y-1 text-sm">{ (section as VideoPlaceholderSection).videos.map(vid => { const ans = answers[vid.id]; return ans?.isAttempted && ans.value ? <li key={vid.id}><strong>Notes for "{vid.title.substring(0,30)}...":</strong> {(ans.value as string || '').substring(0, 70)}...</li> : null; }) }</ul>);
         break;
-      case 'DiagramLabelDragDrop':
-        const dndAnswers = answers as Record<string, { placedLabelIds: string[]; isCorrect?: boolean }>;
-        const placedSummaries = Object.entries(dndAnswers).map(([zoneId, zoneAnswer]) => {
-            const zoneConfig = (section as DiagramLabelDragDropSection).dropZones.find(z => z.id === zoneId);
-            if (zoneAnswer.placedLabelIds && zoneAnswer.placedLabelIds.length > 0) {
-                const labelTexts = zoneAnswer.placedLabelIds.map(labelId => {
-                    const label = (section as DiagramLabelDragDropSection).labels.find(l => l.id === labelId);
-                    return label ? label.text : 'Unknown Label';
-                }).join(', ');
-                return <li key={zoneId}><strong>{zoneConfig?.title || zoneId}:</strong> {labelTexts} {zoneAnswer.isCorrect !== undefined ? (zoneAnswer.isCorrect ? ' (Correct)' : ' (Incorrect)') : ''}</li>;
-            }
-            return null;
-        }).filter(Boolean);
-        if (placedSummaries.length > 0) {
-            contentSummary = <ul className="list-disc pl-5 space-y-1 text-sm">{placedSummaries}</ul>;
-        } else {
-            contentSummary = <p className="text-sm text-slate-600 ml-4">No labels placed in diagram.</p>;
-        }
+      case 'DiagramLabelDragDrop': // Basic summary for D&D if answers are simple key-value
+        const dndAttemptedItems = Object.keys(answers).length;
+        if (dndAttemptedItems > 0) contentSummary = <p className="text-sm text-slate-700 ml-4">{dndAttemptedItems} label(s) placed (details in task).</p>;
+        else contentSummary = <p className="text-sm text-slate-600 ml-4">No labels placed.</p>;
         break;
       default: 
         const attemptedItems = Object.values(answers).filter((ans: any) => ans.isAttempted).length;
@@ -482,15 +411,11 @@ const NewWorksheetPlayer: React.FC<NewWorksheetPlayerProps> = ({
       case 'StarterActivity': return <StarterActivitySectionDisplay {...activityCommonProps} section={section as StarterActivitySection} onAnswerChange={(qId, val, minLen) => handleAnswerChange(section.id, qId, val, minLen)} />;
       case 'LessonOutcomes': return <LessonOutcomesSectionDisplay {...commonProps} section={section as LessonOutcomesSection} />;
       case 'DiagramLabelDragDrop': 
-        // Pass the specific onAnswerChange for DiagramLabelDragDrop
-        return <DiagramLabelDragDropDisplay 
-                    {...activityCommonProps} 
-                    section={section as DiagramLabelDragDropSection} 
-                    onAnswerChange={(answersForSection, isSectionAttempted) => handleAnswerChange(section.id, answersForSection, undefined, undefined, isSectionAttempted)} 
-                />;
+        // Using the placeholder display for this reverted state
+        return <PlaceholderDiagramLabelDragDropDisplay section={section as DiagramLabelDragDropSection} />;
       case 'MatchingTask': return <MatchingTaskSectionDisplay {...activityCommonProps} section={section as MatchingTaskSection} onAnswerChange={(itemId, val, isAttempted) => handleAnswerChange(section.id, itemId, val, undefined, isAttempted)} />;
       case 'RegisterExplorer': return <RegisterExplorerSectionDisplay {...activityCommonProps} section={section as RegisterExplorerSection} onAnswerChange={(itemId, val, isAttempted) => handleAnswerChange(section.id, itemId, val, undefined, isAttempted)} />; 
-      case 'BusSimulation': return <BusSimulationSectionDisplay section={section as BusSimulationSection} keywordsData={worksheetData.keywordsData} />; 
+      case 'BusSimulation': return <BusSimulationSectionDisplay {...activityCommonProps} section={section as BusSimulationSection} />; 
       case 'ScenarioQuestion': return <ScenarioQuestionDisplay {...activityCommonProps} section={section as ScenarioQuestionSection} onAnswerChange={(itemId, val, isAttempted) => handleAnswerChange(section.id, itemId, val, undefined, isAttempted)} />;
       case 'FillTheBlanks': return <FillTheBlanksSectionDisplay {...activityCommonProps} section={section as FillTheBlanksSection} onAnswerChange={(itemId, val, isAttempted) => handleAnswerChange(section.id, itemId, val, undefined, isAttempted)} />;
       case 'MultipleChoiceQuiz': return <MultipleChoiceQuizDisplay {...activityCommonProps} section={section as MultipleChoiceQuizSection} onAnswerChange={(itemId, val, isAttempted) => handleAnswerChange(section.id, itemId, val, undefined, isAttempted)} />;
